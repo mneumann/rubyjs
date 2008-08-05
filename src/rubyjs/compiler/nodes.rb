@@ -204,8 +204,21 @@ class Compiler; class Node
     kind :dregx_once
   end
 
+  # 
+  # A regular expression match. For example:
+  #
+  #   /regexp/ =~ a
+  #
+  # is converted to 
+  #
+  #   [:match2, [:lit, /regexp/], [:lvar, :a]]
+  #
   class Match2 < Node
     kind :match2
+
+    #def normalize(pattern, target)
+    #  Call.new_with_args(@compiler, pattern, :=~, ArrayLiteral.new_with_args(@compiler, target))
+    #end
 
     def args(pattern, target)
       @pattern, @target = pattern, target
@@ -214,6 +227,15 @@ class Compiler; class Node
     attr_accessor :pattern, :target
   end
 
+  # 
+  # A regular expression match. For example:
+  #
+  #   a =~ /regexp/
+  #
+  # is converted to 
+  #
+  #   [:match3, [:lit, /regexp/], [:lvar, :a]]
+  #
   class Match3 < Node
     kind :match3
 
@@ -224,6 +246,7 @@ class Compiler; class Node
     attr_accessor :target, :pattern
   end
 
+=begin
   class BackRef < Node
     kind :back_ref
 
@@ -233,17 +256,123 @@ class Compiler; class Node
 
     attr_accessor :kind
   end
+=end
 
+  #
+  # Regular expression lookup $1 .. $9
+  #
   class NthRef < Node
     kind :nth_ref
 
-    def args(which)
-      @which = which
+    def args(n)
+      raise Error, "NthRef: out of bounds" if n < 1 or n > 9
+      @n = n
     end
 
-    attr_accessor :which
+    attr_accessor :n
+  end
+  
+  #----------------------------------------------
+  # Variable Access
+  #----------------------------------------------
+
+  class GetVariable < Node
+    def args(name)
+      @name = name
+    end
+
+    attr_accessor :name
   end
 
+  class SetVariable < Node
+    def args(name, expr)
+      @name, @expr = name, expr
+    end
+
+    attr_accessor :name, :expr
+  end
+
+  #
+  # Local variable lookup
+  #
+  class LVar < GetVariable
+    kind :lvar
+  end
+
+  #
+  # Local variable assignment
+  #
+  class LAsgn < SetVariable
+    kind :lasgn
+  end
+
+  #
+  # Dynamic variable lookup
+  #
+  class DVar < GetVariable
+    kind :dvar
+  end
+  
+  #
+  # Dynamic variable assignment 
+  #
+  class DAsgn < SetVariable
+    kind :dasgn
+  end
+
+  #
+  # Dynamic variable declaration and assignment 
+  #
+  # For example:
+  #
+  #   loop do |a|
+  #     a = 1
+  #   end
+  #
+  # generates for the block parameter "|a|":
+  #
+  #   [:dasgn_curr, :a],
+  #
+  # and for the "a = 1" assignment:
+  #
+  #   [:dasgn_curr, :a, [:lit, 1]]
+  #   
+  class DAsgnCurr < SetVariable
+    kind :dasgn_curr
+
+    def args(name, expr=nil)
+      super
+    end
+  end
+
+  #
+  # Global variable lookup
+  #
+  class GVar < GetVariable
+    kind :gvar
+  end
+
+  #
+  # Global variable assignment
+  #
+  class GAsgn < SetVariable
+    kind :gasgn
+  end
+
+  #
+  # Instance variable lookup
+  #
+  class IVar < GetVariable
+    kind :ivar
+  end
+
+  #
+  # Instance variable assignment
+  #
+  class IAsgn < SetVariable
+    kind :iasgn
+  end
+ 
   #----------------------------------------------
   # Control flow
   #----------------------------------------------
@@ -370,6 +499,16 @@ class Compiler; class Node
     end
 
     attr_accessor :argument
+  end
+
+  class Iter < Node
+    kind :iter
+
+    def args(method_call, block_assignment, body)
+      method_call, block_assignment, body = @method_call, @block_assignment, @body
+    end
+
+    attr_accessor :method_call, :block_assignment, :body
   end
 
   #----------------------------------------------
