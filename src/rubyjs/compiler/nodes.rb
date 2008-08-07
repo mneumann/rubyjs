@@ -285,7 +285,7 @@ class Compiler; class Node
   end
 
   class SetVariable < Node
-    def args(name, expr)
+    def args(name, expr=nil)
       @name, @expr = name, expr
     end
 
@@ -351,10 +351,6 @@ class Compiler; class Node
   #   
   class DAsgnCurr < SetVariable
     kind :dasgn_curr
-
-    def args(name, expr=nil)
-      super
-    end
   end
 
   #
@@ -383,6 +379,51 @@ class Compiler; class Node
   #
   class IAsgn < SetVariable
     kind :iasgn
+  end
+  
+  #
+  # Multiple assignment
+  #
+  # Simple case:
+  #
+  # a, b = 1, 2
+  #
+  # [:masgn,
+  #  [:array, [:lasgn, :a], [:lasgn, :b]],
+  #  [:array, [:lit, 1], [:lit, 2]]]]]]
+  #
+  # Case with splat argument:
+  #
+  # a, *b = 1, 2, 3
+  #
+  # [:masgn,
+  #  [:array, [:lasgn, :a]],
+  #  [:lasgn, :b],
+  #  [:array, [:lit, 1], [:lit, 2], [:lit, 3]]]]]]
+  #
+  # Another case:
+  #
+  # a, b = 1
+  #
+  # [:masgn,
+  #  [:array, [:lasgn, :a], [:lasgn, :b]],
+  #  [:to_ary, [:lit, 1]]]
+  #
+  class MAsgn < Node
+    kind :masgn
+
+    #
+    # The last argument always contains the values.
+    #
+    def args(assignment, *rest)
+      @values = []
+      if last = rest.pop
+        @values << last
+      end
+      @assignments = [assignment] + rest
+    end
+
+    attr_accessor :assignments, :values 
   end
  
   #----------------------------------------------
@@ -517,7 +558,7 @@ class Compiler; class Node
     kind :iter
 
     def args(method_call, block_assignment, body)
-      method_call, block_assignment, body = @method_call, @block_assignment, @body
+      @method_call, @block_assignment, @body = method_call, block_assignment, body
     end
 
     attr_accessor :method_call, :block_assignment, :body
