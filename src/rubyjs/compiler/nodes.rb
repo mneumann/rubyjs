@@ -314,14 +314,24 @@ class Compiler; class Node
   end
   
   #
-  # Dynamic variable assignment 
+  # Dynamic variable assignment.
+  #
+  # For example:
+  #
+  #   loop do |a|
+  #     loop do |a|
+  #     end
+  #   end
+  #
+  # The first "a" will generate a DAsgnCurr, whereas the second "a" will
+  # generate a DAsgn node as it uses the outer scope. 
   #
   class DAsgn < SetVariable
     kind :dasgn
   end
 
   #
-  # Dynamic variable declaration and assignment 
+  # Dynamic variable assignment in current scope.
   #
   # For example:
   #
@@ -336,6 +346,8 @@ class Compiler; class Node
   # and for the "a = 1" assignment:
   #
   #   [:dasgn_curr, :a, [:lit, 1]]
+  #
+  # See also class DAsgn.
   #   
   class DAsgnCurr < SetVariable
     kind :dasgn_curr
