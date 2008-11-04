@@ -649,7 +649,7 @@ class Compiler; class Node
       super(sexp)
     end
 
-    def args(receiver, method_name, arguments=nil)
+    def args(receiver, method_name, arguments)
       @receiver, @method_name, @arguments = receiver, method_name, arguments
     end
   end
@@ -672,7 +672,7 @@ class Compiler; class Node
     kind :vcall
 
     def consume(sexp)
-      super([[:self], sexp.first, nil])
+      super([[:self], sexp.first, [:arglist]])
     end
   end
   

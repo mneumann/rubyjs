@@ -1,5 +1,8 @@
 class Compiler
 
+  #
+  # Represents an abstract syntax tree (AST) node.
+  #
   class Node
     Mapping = {}
 
@@ -41,6 +44,10 @@ class Compiler
       return node
     end
 
+    def compiler
+      @compiler
+    end
+
     def initialize(compiler)
       @compiler = compiler
     end
@@ -72,6 +79,12 @@ class Compiler
     def expand_nil(obj)
       if obj.nil? then Nil.new(@compiler) else obj end
     end
+
+    #
+    # Used for accessing/propagating state within the AST
+    #
+    def get(key) @compiler.get(key) end
+    def set(hash, &block) @compiler.set(hash, &block) end
 
   end # class Node
 
