@@ -17,4 +17,26 @@ class Compiler
   def set_position(line, file)
     @line, @file = line, file
   end
+
+  def initialize
+    @state = {}
+  end 
+
+  def get(key)
+    @state[key]
+  end
+
+  def set(hash, &block)
+    if block
+      old_state = @state.dup
+      begin
+        @state.update(hash)
+        block.call
+      ensure
+        @state = old_state
+      end
+    else
+      @state.update(hash)
+    end
+  end
 end

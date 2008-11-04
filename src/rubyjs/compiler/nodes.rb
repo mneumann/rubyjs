@@ -9,7 +9,7 @@ class Compiler; class Node
 
     def consume(sexp)
       @compiler.set_position(sexp[0], sexp[1])
-      super
+      super(sexp)
     end
 
     def args(line, file, child=nil)
@@ -86,22 +86,12 @@ class Compiler; class Node
   # Literals
   #----------------------------------------------
 
-  class NumberLiteral < Node
-    kind :fixnum
-
-    def args(value)
-      @value = value
-    end
-
-    attr_accessor :value
-  end
-
   class Literal < Node
     kind :lit
 
     def normalize(value)
       case value
-      when Fixnum
+      when Fixnum, Float
         NumberLiteral.new_with_args(@compiler, value)
       when Regexp
         RegexLiteral.new_with_args(@compiler, value.source, value.options)
@@ -117,6 +107,28 @@ class Compiler; class Node
     end
 
     attr_accessor :value
+
+    def self.test(compiler)
+      nd = compiler.string_to_node(":sym")
+      expect(nd.class) == self
+      expect(nd.value) == :sym 
+    end
+  end
+
+  class NumberLiteral < Node
+    kind :fixnum
+
+    def args(value)
+      @value = value
+    end
+
+    attr_accessor :value
+
+    def self.test(compiler)
+      nd = compiler.string_to_node("1")
+      expect(nd.class) == self
+      expect(nd.value) == 1 
+    end
   end
 
   class RegexLiteral < Node
@@ -275,6 +287,13 @@ class Compiler; class Node
   #----------------------------------------------
   # Variable Access
   #----------------------------------------------
+
+  class LocalVariable < Node
+    def consume(sexp)
+      @variable = get(:scope).find_local sexp[0]
+      super(sexp)
+    end
+  end
 
   class GetVariable < Node
     def args(name)
@@ -472,7 +491,29 @@ class Compiler; class Node
   # Method
   #----------------------------------------------
 
-  class Define < Node
+  #
+  # Local variable scope
+  #
+  class LocalScope
+    def initialize(node)
+      @node = node
+    end
+  end
+
+  class ClosedScope < Node
+    def initialize(compiler)
+      super(compiler)
+      @scope = LocalScope.new(self)
+    end
+
+    def consume(sexp)
+      set(:scope => self) do
+        super(sexp)
+      end
+    end
+  end
+
+  class DefineMethod < ClosedScope
     kind :defn
 
     def args(method_name, body)
@@ -564,21 +605,60 @@ class Compiler; class Node
     attr_accessor :method_call, :block_assignment, :body
   end
 
+
+  #
+  # This node type is introduced in FCall.
+  #
+  class ArgList < ArrayLiteral
+    kind :arglist
+  end
+
   #----------------------------------------------
   # Method calls
   #----------------------------------------------
 
   #
-  # Method call without receiver
+  # Method call with receiver
   #
-  class FCall < Node
-    kind :fcall
+  class MethodCall < Node
+    kind :call
 
-    def args(method_name, arguments=nil)
-      @method_name, @arguments = method_name, arguments
+    attr_accessor :receiver, :method_name, :arguments
+
+    def consume(sexp)
+      args = sexp.last
+      case args
+      when nil
+        sexp.pop
+        sexp << [:arglist]
+      when Array
+        case args.first
+        when :array
+          args[0] = :arglist
+        when :splat
+          splat = sexp.pop
+          sexp << [:arglist, splat]
+        end
+      else
+        sexp << [:arglist]
+      end
+
+      sexp.unshift(nil) if sexp.size == 2 # no receiver -> nil
+      sexp[0] = [:self] if sexp.size == 3 and sexp.first.nil?  # Self as receiver
+
+      super(sexp)
     end
 
-    attr_accessor :method_name, :arguments
+    def args(receiver, method_name, arguments=nil)
+      @receiver, @method_name, @arguments = receiver, method_name, arguments
+    end
+  end
+
+  #
+  # Method call without receiver
+  #
+  class FCall < MethodCall
+    kind :fcall
   end
 
   #
@@ -588,28 +668,17 @@ class Compiler; class Node
   # can't determine at parse-time whether "a" is the method call "a()"
   # or a local variable.
   #
-  class VCall < Node
+  class VCall < MethodCall
     kind :vcall
 
-    def args(method_or_variable_name)
-      @method_or_variable_name = method_or_variable_name
+    def consume(sexp)
+      super([[:self], sexp.first, nil])
     end
-
-    attr_accessor :method_or_variable_name
   end
-
-  #
-  # Method call with receiver
-  #
-  class Call < Node
-    kind :call
-
-    def args(receiver, method_name, arguments=nil)
-      @receiver, @method_name, @arguments = receiver, method_name, arguments
-    end
-
-    attr_accessor :receiver, :method_name, :arguments
-  end
+  
+  #----------------------------------------------
+  # Super calls
+  #----------------------------------------------
 
   #
   # Super call.
