@@ -82,4 +82,22 @@ class Compiler::Node
     end
   end
 
+  class Scope
+    def javascript
+      @body.javascript
+    end
+  end
+
+  class DefineMethod
+    def javascript
+      "function #{@method_name}() {" + @body.javascript + "}"   
+    end
+  end
+
+  class Args
+    def javascript
+      nil
+    end
+  end
+
 end
