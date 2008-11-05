@@ -318,53 +318,6 @@ class Compiler; class Node
   end
 
   #
-  # Dynamic variable lookup
-  #
-  class DVar < GetVariable
-    kind :dvar
-  end
-  
-  #
-  # Dynamic variable assignment.
-  #
-  # For example:
-  #
-  #   loop do |a|
-  #     loop do |a|
-  #     end
-  #   end
-  #
-  # The first "a" will generate a DAsgnCurr, whereas the second "a" will
-  # generate a DAsgn node as it uses the outer scope. 
-  #
-  class DAsgn < SetVariable
-    kind :dasgn
-  end
-
-  #
-  # Dynamic variable assignment in current scope.
-  #
-  # For example:
-  #
-  #   loop do |a|
-  #     a = 1
-  #   end
-  #
-  # generates for the block parameter "|a|":
-  #
-  #   [:dasgn_curr, :a],
-  #
-  # and for the "a = 1" assignment:
-  #
-  #   [:dasgn_curr, :a, [:lit, 1]]
-  #
-  # See also class DAsgn.
-  #   
-  class DAsgnCurr < SetVariable
-    kind :dasgn_curr
-  end
-
-  #
   # Global variable lookup
   #
   class GVar < GetVariable
