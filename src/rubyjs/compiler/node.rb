@@ -30,8 +30,9 @@ class Compiler
           node.args(*args)
         end
       rescue ArgumentError => e
-        err_msg = "%s (%s) takes %s argument(s): passed %s (%s)" % [
-          kind(), self, args.size, args.inspect, e.message ]
+        arity = node.method(node.respond_to?(:normalize) ? :normalize : :args).arity
+        err_msg = "%s (%s) takes %s argument(s): passed %s (%s) -- %s" % [
+          kind(), self, arity , args.size, args.inspect, e.message ]
         raise ArgumentError, err_msg
       end
 

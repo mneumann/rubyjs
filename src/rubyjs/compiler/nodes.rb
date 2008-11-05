@@ -516,11 +516,11 @@ class Compiler; class Node
   class DefineMethod < ClosedScope
     kind :defn
 
-    def args(method_name, body)
-      @method_name, @body = method_name, body
+    def args(method_name, arguments, body)
+      @method_name, @arguments, @body = method_name, arguments, body
     end
 
-    attr_accessor :method_name, :body
+    attr_accessor :method_name, :arguments, :body
   end
 
   class Scope < Node
@@ -605,7 +605,6 @@ class Compiler; class Node
     attr_accessor :method_call, :block_assignment, :body
   end
 
-
   #
   # This node type is introduced in FCall.
   #
@@ -617,65 +616,20 @@ class Compiler; class Node
   # Method calls
   #----------------------------------------------
 
-  #
-  # Method call with receiver
-  #
   class MethodCall < Node
     kind :call
 
-    attr_accessor :receiver, :method_name, :arguments
-
-    def consume(sexp)
-      args = sexp.last
-      case args
-      when nil
-        sexp.pop
-        sexp << [:arglist]
-      when Array
-        case args.first
-        when :array
-          args[0] = :arglist
-        when :splat
-          splat = sexp.pop
-          sexp << [:arglist, splat]
-        end
-      else
-        sexp << [:arglist]
-      end
-
-      sexp.unshift(nil) if sexp.size == 2 # no receiver -> nil
-      sexp[0] = [:self] if sexp.size == 3 and sexp.first.nil?  # Self as receiver
-
-      super(sexp)
-    end
-
     def args(receiver, method_name, arguments)
       @receiver, @method_name, @arguments = receiver, method_name, arguments
+      if @receiver.nil?
+        @private_call = true
+        @receiver = Self.new_with_args(@compiler)
+      end
     end
+
+    attr_accessor :receiver, :method_name, :arguments
   end
 
-  #
-  # Method call without receiver
-  #
-  class FCall < MethodCall
-    kind :fcall
-  end
-
-  #
-  # Method call without receiver or variable access.
-  #
-  # This is a speciality of Ruby, and is required when the Ruby parser
-  # can't determine at parse-time whether "a" is the method call "a()"
-  # or a local variable.
-  #
-  class VCall < MethodCall
-    kind :vcall
-
-    def consume(sexp)
-      super([[:self], sexp.first, [:arglist]])
-    end
-  end
-  
   #----------------------------------------------
   # Super calls
   #----------------------------------------------

@@ -1,4 +1,4 @@
-class Compiler::Node
+class Compiler; class Node
 
   #
   # Needs this node to be bracketized when used as receiver?
@@ -100,4 +100,4 @@ class Compiler::Node
     end
   end
 
-end
+end; end # class Node; class Compiler
