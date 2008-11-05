@@ -169,14 +169,6 @@ class Compiler; class Node
     attr_accessor :elements
   end
 
-  class EmptyArrayLiteral < Node
-    kind :zarray
-
-    def normalize
-      ArrayLiteral.new_with_args(@compiler)
-    end
-  end
-  
   #----------------------------------------------
   # Dynamic Literals
   #----------------------------------------------
