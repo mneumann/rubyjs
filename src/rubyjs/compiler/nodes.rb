@@ -280,69 +280,71 @@ class Compiler; class Node
   # Variable Access
   #----------------------------------------------
 
-  class LocalVariable < Node
-    def consume(sexp)
-      @variable = get(:scope).find_local sexp[0]
-      super(sexp)
+  #
+  # Local variable assignment
+  #
+  class LAsgn < Node
+    kind :lasgn
+
+    def args(name, expr)
+      @variable = get(:scope).find_variable(name, true) || raise("Undefined variable #{name}")
+      @expr = expr
     end
-  end
-
-  class GetVariable < Node
-    def args(name)
-      @name = name
-    end
-
-    attr_accessor :name
-  end
-
-  class SetVariable < Node
-    def args(name, expr=nil)
-      @name, @expr = name, expr
-    end
-
-    attr_accessor :name, :expr
   end
 
   #
   # Local variable lookup
   #
-  class LVar < GetVariable
+  class LVar < Node
     kind :lvar
-  end
 
-  #
-  # Local variable assignment
-  #
-  class LAsgn < SetVariable
-    kind :lasgn
+    def args(name)
+      @variable = get(:scope).find_variable(name) || raise("Undefined variable #{name}")
+    end
   end
 
   #
   # Global variable lookup
   #
-  class GVar < GetVariable
+  class GVar < Node
     kind :gvar
+
+    def args(name)
+      @name = name
+    end
   end
 
   #
   # Global variable assignment
   #
-  class GAsgn < SetVariable
+  class GAsgn < Node
     kind :gasgn
+
+    def args(name, expr)
+      @name, @expr = name, expr
+    end
   end
 
   #
   # Instance variable lookup
   #
-  class IVar < GetVariable
+  class IVar < Node
     kind :ivar
+
+    def args(name)
+      @name = name
+    end
   end
 
   #
   # Instance variable assignment
   #
-  class IAsgn < SetVariable
+  class IAsgn < Node
     kind :iasgn
+
+    def args(name, expr)
+      @name, @expr = name, expr
+    end
   end
   
   #
@@ -436,12 +438,45 @@ class Compiler; class Node
   # Method
   #----------------------------------------------
 
+  class LocalVariable
+    attr_reader :name, :scope
+
+    def initialize(name, scope)
+      @name, @scope = name, scope
+    end
+  end
+
   #
   # Local variable scope
   #
   class LocalScope
-    def initialize(node)
+    attr_reader :node
+
+    def initialize(node, enclosing_scope=nil)
       @node = node
+      @enclosing_scope = enclosing_scope
+      @variables = Hash.new
+    end
+
+    def find_variable(name, declare_if_not_found=false)
+      name = name.to_s
+      var = @variables[name] || (@enclosing_scope ? @enclosing_scope.find_variable(name) : nil)
+      if declare_if_not_found and var.nil?
+        declare_variable(name)
+      else
+        var
+      end
+    end
+
+    #
+    # Variables are always declared in the outer most local scope
+    #
+    def declare_variable(name)
+      name = name.to_s
+      raise if @variables[name]
+      var = LocalVariable.new(name, self)
+      @variables[name] = var
+      return var
     end
   end
 
@@ -452,7 +487,7 @@ class Compiler; class Node
     end
 
     def consume(sexp)
-      set(:scope => self) do
+      set(:scope => @scope) do
         super(sexp)
       end
     end
@@ -481,13 +516,37 @@ class Compiler; class Node
   class Args < Node
     kind :args
 
-    # FIXME!!!
-
     def args(*arguments)
-      @arguments = arguments
+      if arguments.last.is_a?(Block)
+        # optional arguments assignment 
+        @optional = arguments.pop
+      end
+
+      @catch_all = nil
+      @block = nil
+      @arguments = []
+
+      arguments.each {|arg|
+        arg = arg.to_s
+        case arg[0,1]
+        when '*'
+          raise if @catch_all
+          arg = arg[1..-1] 
+          @catch_all = arg
+        when '&'
+          raise if @block
+          arg = arg[1..-1] 
+          @block = arg
+        else
+          @arguments << arg
+        end
+        get(:scope).find_variable(arg, true)
+      }
     end
 
-    attr_accessor :arguments
+    def min_arity
+      @arguments.size - (@optional ? @optional.statements.size : 0)
+    end
   end
 
   #

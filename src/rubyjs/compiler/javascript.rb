@@ -90,13 +90,54 @@ class Compiler; class Node
 
   class DefineMethod
     def javascript
-      "function #{@method_name}() {" + @body.javascript + "}"   
+      args = @arguments.javascript_arglist
+      opt = @arguments.javascript_optional
+      "function #{@method_name}(#{args}){\n" +
+        (opt ? opt + ";" : "") + 
+        @body.javascript + "}"   
     end
   end
 
   class Args
+    def javascript_arglist
+      args = @arguments 
+      if @block and not @catch_all
+        args += ["_", @block]
+      end
+      args.join(", ")
+    end
+
+    def javascript_optional
+      return nil unless @optional
+
+      "switch(arguments.length) {\n" + 
+      @optional.statements.each_with_index.map {|opt, i|
+        "case #{self.min_arity+i}: #{opt.javascript};"
+      }.join("\n") + 
+      "}\n"
+    end
+  end
+
+  class LVar
+    def brackets?() false end
+
     def javascript
-      nil
+      "#{@variable.name}"
+    end
+  end
+
+  class LAsgn
+    def javascript
+      "#{@variable.name} = #{@expr.javascript}"
+    end
+  end
+
+  class Iter
+    def javascript
+      "function() {\n" +
+      @body.javascript +
+      "};" + 
+      @method_call.javascript
     end
   end
 
