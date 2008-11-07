@@ -4,12 +4,29 @@ require 'nodes'
 require 'javascript'
 
 require 'rubygems'
-require 'parse_tree'
 require 'unified_ruby'
+require 'method_extractor'
 
 require 'pp'
 
-sexp = Unifier.new.process(*ParseTree.new.parse_tree_for_string("def test(a,b=1,c=4, *all, &block) a + 1; loop do c = 1 end end"))
-pp sexp
-node = Compiler.new.sexp_to_node(sexp)
-puts node.javascript
+class A
+  def self.x
+  end
+  def hallo
+  end
+  def super
+  end
+  def test(a,b=1,c=4, *all, &block) a + 1; loop do c = 1 end end
+end
+
+methods = MethodExtractor.from_class(A)
+
+methods[:class].each do |name, sexp|
+  node = Compiler.new.sexp_to_node(sexp)
+  puts node.javascript
+end
+
+methods[:instance].each do |name, sexp|
+  node = Compiler.new.sexp_to_node(sexp)
+  puts node.javascript
+end
