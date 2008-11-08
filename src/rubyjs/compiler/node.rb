@@ -16,10 +16,6 @@ module RubyJS
         Mapping[@kind = name] = self
       end
 
-      def terminal?
-        false
-      end
-
       #
       # Creates a Node for the given +compiler+ and process +sexp+.
       #

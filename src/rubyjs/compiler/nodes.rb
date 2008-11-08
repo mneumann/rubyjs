@@ -18,30 +18,24 @@ module RubyJS
         @line, @file, @child = line, file, child
       end
     end
-
-    class TerminalNode < Node
-      def terminal?
-        true
-      end
-    end
-
+    
     #----------------------------------------------
     # Special values
     #----------------------------------------------
 
-    class True < TerminalNode
+    class True < Node
       kind :true
     end
 
-    class False < TerminalNode
+    class False < Node
       kind :false
     end
 
-    class Nil < TerminalNode
+    class Nil < Node
       kind :nil
     end
 
-    class Self < TerminalNode
+    class Self < Node
       kind :self
     end
     
@@ -94,7 +88,7 @@ module RubyJS
     # Literals
     #----------------------------------------------
 
-    class Literal < TerminalNode
+    class Literal < Node
       kind :lit
 
       def normalize(value)
@@ -123,7 +117,7 @@ module RubyJS
       end
     end
 
-    class NumberLiteral < TerminalNode
+    class NumberLiteral < Node
       kind :fixnum
 
       def args(value)
@@ -139,7 +133,7 @@ module RubyJS
       end
     end
 
-    class RegexLiteral < TerminalNode
+    class RegexLiteral < Node
       kind :regex
 
       def args(source, options)
@@ -157,7 +151,7 @@ module RubyJS
       attr_accessor :start, :stop, :exclude_end
     end
 
-    class StringLiteral < TerminalNode
+    class StringLiteral < Node
       kind :str
 
       def args(str)
@@ -303,7 +297,7 @@ module RubyJS
     #
     # Local variable lookup
     #
-    class LVar < TerminalNode
+    class LVar < Node
       kind :lvar
 
       def args(name)
@@ -314,7 +308,7 @@ module RubyJS
     #
     # Global variable lookup
     #
-    class GVar < TerminalNode
+    class GVar < Node
       kind :gvar
 
       def args(name)
@@ -336,7 +330,7 @@ module RubyJS
     #
     # Instance variable lookup
     #
-    class IVar < TerminalNode
+    class IVar < Node
       kind :ivar
 
       def args(name)
