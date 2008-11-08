@@ -27,26 +27,40 @@ module RubyJS
     class True
       def brackets?() false end
 
-      def javascript() "true" end
+      def javascript(as_expression=nil)
+        "true"
+      end
     end
 
     class False
       def brackets?() false end
 
-      def javascript() "false" end
+      def javascript(as_expression=nil)
+        "false"
+      end
     end
 
     class Nil
       def brackets?() false end
 
-      def javascript() "nil" end
+      def javascript(as_expression=nil)
+        "nil"
+      end
     end
 
     class NumberLiteral
       def brackets?() true end
 
-      def javascript
+      def javascript(as_expression=nil)
         @value.to_s
+      end
+    end
+
+    class StringLiteral
+      def brackets?() false end
+
+      def javascript(as_expression=nil)
+        @string.inspect
       end
     end
 
@@ -56,47 +70,71 @@ module RubyJS
     class Self
       def brackets?() false end
 
-      def javascript() "this" end
+      def javascript(as_expression=nil)
+        "this"
+      end
+    end
+
+    class If
+      def brackets?
+        false
+      end
+
+      def javascript(as_expression=nil)
+        cond = @condition.javascript(true)
+        th = @then.javascript(as_expression)
+        el = @else.javascript(as_expression)
+
+        if as_expression
+          "(#{cond} ? #{th} : #{el})"
+        else
+          "if (#{cond}) {\n#{th}\n} else {\n#{el}\n}"
+        end
+      end
     end
 
     class Block
       def brackets?() raise end
 
-      def javascript
-        @statements.map {|s| s.javascript}.join(";")
+      def javascript(as_expression=false)
+        raise if as_expression
+        @statements.map {|s| s.javascript(as_expression) + ";"}.join("\n")
       end
     end
 
     class ArgList
       def brackets?() raise end
 
-      def javascript
-        @elements.map {|e| e.javascript}.join(", ")
+      def javascript(as_expression=true)
+        #raise unless as_expression
+        @elements.map {|e| e.javascript(as_expression)}.join(", ")
       end
     end
 
     class MethodCall
       def brackets?() false end
 
-      def javascript
+      def javascript(as_expression=nil)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
-        fmt % [@receiver.javascript, @method_name.to_s, @arguments.javascript] 
+        fmt % [@receiver.javascript(true), @method_name.to_s, @arguments.javascript(true)] 
       end
     end
 
     class Scope
-      def javascript
-        @body.javascript
+      def javascript(as_expression=nil)
+        @body.javascript(as_expression)
       end
     end
 
     class DefineMethod
-      def javascript
+      def javascript(as_expression=false)
+        raise if as_expression
+
         args = @arguments.javascript_arglist
         opt = @arguments.javascript_optional
         "function #{@method_name}(#{args}){\n" +
           (opt ? opt + ";" : "") + 
-          @body.javascript + "}"   
+          @body.javascript(as_expression) + "}"
       end
     end
 
@@ -109,12 +147,13 @@ module RubyJS
         args.join(", ")
       end
 
-      def javascript_optional
+      def javascript_optional(as_expression=false)
+        raise if as_expression
         return nil unless @optional
 
         "switch(arguments.length) {\n" + 
         @optional.statements.each_with_index.map {|opt, i|
-          "case #{self.min_arity+i}: #{opt.javascript};"
+          "case #{self.min_arity+i}: #{opt.javascript(as_expression)};"
         }.join("\n") + 
         "}\n"
       end
@@ -123,23 +162,39 @@ module RubyJS
     class LVar
       def brackets?() false end
 
-      def javascript
+      def javascript(as_expression=nil)
         "#{@variable.name}"
       end
     end
 
     class LAsgn
-      def javascript
-        "#{@variable.name} = #{@expr.javascript}"
+      def javascript(as_expression=nil)
+        "#{@variable.name} = #{@expr.javascript(true)}"
       end
     end
 
+    class IVar
+      def brackets?() false end
+
+      def javascript(as_expression=nil)
+        "#{@name}"
+      end
+    end
+
+    class IAsgn
+      def javascript(as_expression=nil)
+        "#{@name} = #{@expr.javascript(true)}"
+      end
+    end
+
+
     class Iter
-      def javascript
+      def javascript(as_expression=nil)
         "function() {\n" +
-        @body.javascript +
-        "};" + 
-        @method_call.javascript
+        @body.javascript(false) +
+        "};" #+ 
+        # FIXME
+        #@method_call.javascript(as_expression)
       end
     end
 

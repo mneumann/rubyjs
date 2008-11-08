@@ -334,7 +334,8 @@ module RubyJS
       kind :ivar
 
       def args(name)
-        @name = name
+        @name = name.to_s
+        get(:method_scope).add_ivar_lookup(@name)
       end
     end
 
@@ -345,7 +346,8 @@ module RubyJS
       kind :iasgn
 
       def args(name, expr)
-        @name, @expr = name, expr
+        @name, @expr = name.to_s, expr
+        get(:method_scope).add_ivar_assignment(@name)
       end
     end
     
@@ -452,7 +454,7 @@ module RubyJS
     # Local variable scope
     #
     class LocalScope
-      attr_reader :node
+      attr_reader :node, :variables
 
       def initialize(node, enclosing_scope=nil)
         @node = node
@@ -481,27 +483,59 @@ module RubyJS
         return var
       end
     end
+    
+    #
+    # Method scope used to write down called method and accessed
+    # instance methods.
+    #
+    class MethodScope
+      attr_reader :ivar_assignments, :ivar_lookups
+      attr_reader :method_calls
 
-    class ClosedScope < Node
-      def initialize(compiler)
-        super(compiler)
-        @scope = LocalScope.new(self)
+      def initialize
+        @ivar_assignments = Set.new
+        @ivar_lookups = Set.new
+        @method_calls = Set.new
+        @super_call = false
       end
 
-      def consume(sexp)
-        set(:scope => @scope) do
-          super(sexp)
-        end
+      def add_super_call
+        @super_call = true
+      end
+
+      def add_method_call(m)
+        @method_calls.add(m)
+      end
+
+      def add_ivar_lookup(ivar)
+        @ivar_lookups.add(ivar)
+      end
+
+      def add_ivar_assignment(ivar)
+        @ivar_assignments.add(ivar)
       end
     end
 
-    class DefineMethod < ClosedScope
+    class DefineMethod < Node
       kind :defn
+
+      def initialize(compiler)
+        super(compiler)
+        @scope = LocalScope.new(self)
+        @method_scope = MethodScope.new
+      end
+
+      def consume(sexp)
+        set(:scope => @scope, :method_scope => @method_scope) do
+          super(sexp)
+        end
+      end
 
       def args(method_name, arguments, body)
         @method_name, @arguments, @body = method_name, arguments, body
       end
 
+      attr_reader :scope, :method_scope
       attr_accessor :method_name, :arguments, :body
     end
 
@@ -626,7 +660,10 @@ module RubyJS
       kind :call
 
       def args(receiver, method_name, arguments)
-        @receiver, @method_name, @arguments = receiver, method_name, arguments
+        @receiver, @method_name, @arguments = receiver, method_name.to_s, arguments
+
+        get(:method_scope).add_method_call(@method_name)
+
         if @receiver.nil?
           @private_call = true
           @receiver = Self.new_with_args(@compiler)
@@ -653,6 +690,7 @@ module RubyJS
 
       def args(arguments=nil)
         @arguments = arguments
+        get(:method_scope).add_super_call
       end
 
       attr_accessor :arguments
@@ -668,6 +706,9 @@ module RubyJS
     #
     class ZSuper < Node
       kind :zsuper
+
+      #TODO
+      #get(:method_scope).add_super_call
     end
 
     #
@@ -687,7 +728,8 @@ module RubyJS
       kind :attrasgn
 
       def args(receiver, method_name, argument)
-        @receiver, @method_name, @argument = receiver, method_name, argument
+        @receiver, @method_name, @argument = receiver, method_name.to_s, argument
+        get(:method_scope).add_method_call(@method_name)
       end
 
       attr_accessor :receiver, :method_name, :argument
