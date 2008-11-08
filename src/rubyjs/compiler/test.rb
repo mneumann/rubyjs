@@ -25,12 +25,15 @@ module RubyJS
   end
 end
 
-model =  RubyJS::EntityModel.of(RubyJS::Environment::Array)
-model.cmethods.each do |name, sexp|
-  node = RubyJS::Compiler.new.sexp_to_node(sexp)
+world = RubyJS::WorldModel.new
+model = world.lookup(RubyJS::Environment::Array)
+
+model.cmethods.each do |name, meth|
+  node = RubyJS::Compiler.new.sexp_to_node(meth.sexp)
   puts node.javascript
-end
-model.imethods.each do |name, sexp|
-  node = RubyJS::Compiler.new.sexp_to_node(sexp)
+end 
+
+model.imethods.each do |name, meth|
+  node = RubyJS::Compiler.new.sexp_to_node(meth.sexp)
   puts node.javascript
-end
+end 

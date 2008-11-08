@@ -4,11 +4,11 @@ module RubyJS
   require 'set'
 
   class MethodModel
-    attr_reader :name, :node, :entity_model
+    attr_reader :name, :sexp, :entity_model
 
-    def initialize(entity_model, name, node, is_class_method=false)
+    def initialize(entity_model, name, sexp, is_class_method=false)
       @entity_model = entity_model
-      @name, @node = name, node
+      @name, @sexp = name, sexp
       @is_class_method = is_class_method
     end
 
@@ -129,12 +129,13 @@ module RubyJS
   end
 
   #
-  # Class WorldModel represent ... 
+  # Class WorldModel represents ... 
   #
   class WorldModel
 
     def initialize
       @entity_model_map = {}
+      register_all_entities!
     end
 
     def entity_models_sorted
