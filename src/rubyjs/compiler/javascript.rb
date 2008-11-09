@@ -4,7 +4,7 @@ module RubyJS
 
     #
     # Needs this node to be bracketized when used as receiver?
-    # By default, yes.
+    # By default, no.
     #
     # Examples: 
     #
@@ -17,31 +17,38 @@ module RubyJS
     #       true.to_s -> true.to_s
     #
     def brackets?
-      true
+      false
     end
+
+    def as_javascript
+    end
+
+    module Expression; end
+
+    module Compound; end
 
     #----------------------------------------------
     # Nodes
     #----------------------------------------------
 
     class True
-      def brackets?() false end
+      include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expr)
         "true"
       end
     end
 
     class False
-      def brackets?() false end
+      include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expr)
         "false"
       end
     end
 
     class Nil
-      def brackets?() false end
+      include Expression
 
       def javascript(as_expression=nil)
         "nil"
@@ -49,6 +56,8 @@ module RubyJS
     end
 
     class NumberLiteral
+      include Expression
+
       def brackets?() true end
 
       def javascript(as_expression=nil)
@@ -57,7 +66,7 @@ module RubyJS
     end
 
     class StringLiteral
-      def brackets?() false end
+      include Expression
 
       def javascript(as_expression=nil)
         @string.inspect
@@ -68,7 +77,7 @@ module RubyJS
     # TODO: Need to replace +this+ with "self" when inside an iterator.
     #
     class Self
-      def brackets?() false end
+      include Expression
 
       def javascript(as_expression=nil)
         "this"
@@ -76,9 +85,7 @@ module RubyJS
     end
 
     class If
-      def brackets?
-        false
-      end
+      include Compound
 
       def javascript(as_expression=nil)
         cond = @condition.javascript(true)
@@ -94,6 +101,8 @@ module RubyJS
     end
 
     class Block
+      include Compound
+
       def brackets?() raise end
 
       def javascript(as_expression=false)
@@ -106,13 +115,13 @@ module RubyJS
       def brackets?() raise end
 
       def javascript(as_expression=true)
-        #raise unless as_expression
+        raise unless as_expression
         @elements.map {|e| e.javascript(as_expression)}.join(", ")
       end
     end
 
     class MethodCall
-      def brackets?() false end
+      include Expression
 
       def javascript(as_expression=nil)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
@@ -121,12 +130,18 @@ module RubyJS
     end
 
     class Scope
+      include Compound
+
+      def brackets?() raise end
+
       def javascript(as_expression=nil)
         @body.javascript(as_expression)
       end
     end
 
     class DefineMethod
+      def brackets?() raise end
+
       def javascript(as_expression=false)
         raise if as_expression
 
@@ -139,6 +154,8 @@ module RubyJS
     end
 
     class Args
+      def brackets?() raise end
+
       def javascript_arglist
         args = @arguments 
         if @block and not @catch_all
@@ -160,7 +177,7 @@ module RubyJS
     end
 
     class LVar
-      def brackets?() false end
+      include Expression
 
       def javascript(as_expression=nil)
         "#{@variable.name}"
@@ -168,13 +185,17 @@ module RubyJS
     end
 
     class LAsgn
+      include Expression
+
+      def brackets?() true end
+
       def javascript(as_expression=nil)
         "#{@variable.name} = #{@expr.javascript(true)}"
       end
     end
 
     class IVar
-      def brackets?() false end
+      include Expression
 
       def javascript(as_expression=nil)
         "#{@name}"
@@ -182,6 +203,10 @@ module RubyJS
     end
 
     class IAsgn
+      include Expression
+
+      def brackets?() true end
+
       def javascript(as_expression=nil)
         "#{@name} = #{@expr.javascript(true)}"
       end
@@ -189,6 +214,10 @@ module RubyJS
 
 
     class Iter
+      # TODO:
+      
+      def brackets?() true end
+
       def javascript(as_expression=nil)
         "function() {\n" +
         @body.javascript(false) +
