@@ -20,55 +20,71 @@ module RubyJS
       false
     end
 
-    def as_javascript
+    #
+    # Compound statements have special behaviour in case of 
+    # <tt>get(:mode) == :last</tt>, in that they pass the mode 
+    # further to their sub-statements instead of generating 
+    # a "return" on their own.
+    #
+    def compound?
+      false
     end
 
-    module Expression; end
+    #
+    # External function to generate javascript of a Node.
+    #
+    # Calls method <tt>as_javascript</tt> internally, but
+    # might take special actions (e.g. surround the output).
+    #
+    def javascript(mode=nil)
+      raise ArgumentError unless [nil, :expression, :statement, :last].include?(mode)
+      h = {}
+      h[:mode] = mode if mode != nil
+      set(h) {
+        if get(:mode) == :last and !compound?
+          "return (" + as_javascript + ")"
+        else
+          as_javascript
+        end
+      }
+    end
 
-    module Compound; end
+    def as_javascript; raise end
+
+    protected :as_javascript
 
     #----------------------------------------------
     # Nodes
     #----------------------------------------------
 
     class True
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         "true"
       end
     end
 
     class False
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         "false"
       end
     end
 
     class Nil
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         "nil"
       end
     end
 
     class NumberLiteral
-      include Expression
-
-      def brackets?() true end
-
-      def javascript(as_expression)
+      def as_javascript
         @value.to_s
       end
+
+      def brackets?; true end
     end
 
     class StringLiteral
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         @string.inspect
       end
     end
@@ -77,85 +93,86 @@ module RubyJS
     # TODO: Need to replace +this+ with "self" when inside an iterator.
     #
     class Self
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         "this"
       end
     end
 
     class If
-      include Compound
+      def as_javascript
+        cond = @condition.javascript(:expression)
+        th = @then.javascript
+        el = @else.javascript
 
-      def javascript(as_expression)
-        cond = @condition.javascript(true)
-        th = @then.javascript(as_expression)
-        el = @else.javascript(as_expression)
-
-        if as_expression
+        if get(:mode) == :expression
           "(#{cond} ? #{th} : #{el})"
         else
           "if (#{cond}) {\n#{th}\n} else {\n#{el}\n}"
         end
       end
+
+      def compound?; true end
     end
 
     class Block
-      include Compound
+      def as_javascript
+        raise if get(:mode) == :expression
+        raise if @statements.empty?
+        last_i = @statements.size - 1
 
-      def brackets?() raise end
-
-      def javascript(as_expression)
-        raise if as_expression
-        @statements.map {|s| s.javascript(as_expression) + ";"}.join("\n")
+        @statements.each_with_index.map {|stmt, i|
+          mode = if get(:mode) == :last and i == last_i then :last else :statement end
+          stmt.javascript()
+        }.join(";\n")
       end
+
+      def brackets?; raise end
+      def compound?; true end
     end
 
     class ArgList
-      def brackets?() raise end
-
-      def javascript(as_expression)
-        raise unless as_expression
-        @elements.map {|e| e.javascript(as_expression)}.join(", ")
+      def as_javascript
+        raise if get(:mode) != :expression
+        @elements.map {|e| e.javascript }.join(", ")
       end
+
+      def brackets?; raise end
     end
 
     class MethodCall
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
-        fmt % [@receiver.javascript(true), @method_name.to_s, @arguments.javascript(true)] 
+        fmt % [
+          @receiver.javascript(:expression),
+          @method_name.to_s,
+          @arguments.javascript(:expression)
+        ]
       end
     end
 
     class Scope
-      include Compound
-
-      def brackets?() raise end
-
-      def javascript(as_expression)
-        @body.javascript(as_expression)
+      def as_javascript
+        @body.javascript
       end
+
+      def brackets?; raise end
+      def compound?; true end
     end
 
     class DefineMethod
-      def brackets?() raise end
-
-      def javascript(as_expression)
-        raise if as_expression
+      def as_javascript
+        raise if get(:mode) == :expression
 
         args = @arguments.javascript_arglist
         opt = @arguments.javascript_optional
         "function #{@method_name}(#{args}){\n" +
-          (opt ? opt + ";" : "") + 
-          @body.javascript(as_expression) + "}"
+          (opt ? opt + ";" : "") + @body.javascript(:last) + "}"
       end
+
+      def brackets?; raise end
     end
 
     class Args
-      def brackets?() raise end
-
       def javascript_arglist
         args = @arguments 
         if @block and not @catch_all
@@ -169,61 +186,55 @@ module RubyJS
 
         "switch(arguments.length) {\n" + 
         @optional.statements.each_with_index.map {|opt, i|
-          "case #{self.min_arity+i}: #{opt.javascript(false)};"
-        }.join("\n") + 
-        "}\n"
+          "case #{self.min_arity+i}: #{opt.javascript(:statement)};"
+        }.join("\n") + "}\n"
       end
+
+      def brackets?; raise end
     end
 
     class LVar
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         "#{@variable.name}"
       end
     end
 
     class LAsgn
-      include Expression
-
-      def brackets?() true end
-
-      def javascript(as_expression)
-        "#{@variable.name} = #{@expr.javascript(true)}"
+      def as_javascript
+        "#{@variable.name} = #{@expr.javascript(:expression)}"
       end
+
+      def brackets?; true end
     end
 
     class IVar
-      include Expression
-
-      def javascript(as_expression)
+      def as_javascript
         "#{@name}"
       end
     end
 
     class IAsgn
-      include Expression
-
-      def brackets?() true end
-
-      def javascript(as_expression)
-        "#{@name} = #{@expr.javascript(true)}"
+      def as_javascript
+        "#{@name} = #{@expr.javascript(:expression)}"
       end
+
+      def brackets?; true end
     end
 
 
+    #
+    # TODO
+    #
     class Iter
-      # TODO:
-      
-      def brackets?() true end
-
-      def javascript(as_expression)
+      def as_javascript
         "function() {\n" +
-        @body.javascript(false) +
+        @body.javascript(:last) +
         "};" #+ 
         # FIXME
         #@method_call.javascript(as_expression)
       end
+
+      def brackets?; true end
     end
 
   end; end # class Node; class Compiler

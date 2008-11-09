@@ -433,6 +433,7 @@ module RubyJS
 
       def args(*statements)
         @statements = statements
+        @statements << Nil.new_with_args(@compiler) if @statements.empty?
       end
 
       attr_accessor :statements
