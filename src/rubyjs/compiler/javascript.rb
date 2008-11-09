@@ -197,7 +197,7 @@ module RubyJS
 
         @statements.each_with_index.map {|stmt, i|
           mode = if get(:mode) == :last and i == last_i then :last else :statement end
-          stmt.javascript()
+          stmt.javascript(mode)
         }.join(";\n")
       end
 
