@@ -100,18 +100,93 @@ module RubyJS
 
     class If
       def as_javascript
-        cond = @condition.javascript(:expression)
-        th = @then.javascript
-        el = @else.javascript
+        s1, s2 = @then, @else
+        negate = false
+        if s1.nil?
+          s1, s2 = s2, s1
+          negate = true
+        end
+
+        if s1.nil?
+          #
+          # This is a very special case in which both "then" and "else"
+          # parts are missing. For example:
+          #
+          #   if true
+          #   end
+          #
+          # Or
+          #
+          #   if true
+          #   else
+          #   end
+          #
+          # What we do is, to evalute the condition (as it might include
+          # side-effects) and return "nil".
+          #
+          case get(:mode)
+          when :expression
+            return "(#{@condition.javascript(:expression)},nil)" 
+          when :statement
+            return "#{@condition.javascript(:expression)}" 
+          when :last
+            return "#{@condition.javascript(:expression)}; return nil" 
+          else
+            raise
+          end
+        end
+          
+        cond = conditionalize(@condition, negate)
 
         if get(:mode) == :expression
-          "(#{cond} ? #{th} : #{el})"
+          #
+          # In an expression, we always need the "then" and the "else"
+          # part!
+          #
+          # If the "else" part is missing, replace it with "nil".
+          #
+          "(#{cond} ? #{s1.javascript} : #{s2 ? s2.javascript : 'nil'})"
         else
-          "if (#{cond}) {\n#{th}\n} else {\n#{el}\n}"
+          "if (#{cond}) {\n#{s1.javascript}\n}" + 
+          if s2
+            " else {\n#{s2.javascript}\n}" 
+          elsif get(:mode) == :last
+            #
+            # In case this is the last statement, and the else
+            # part is missing, generate one.
+            #
+            " else {return nil}"
+          else
+            ""
+          end
         end
       end
 
       def compound?; true end
+
+      protected
+
+      #
+      # We do some minor optimizations if we face
+      # some literal values where we already know
+      # the outcome.
+      #
+      def conditionalize(cond, negate=false)
+        case cond
+        when Nil, False
+          negate ? "true" : "false"
+        when True, StringLiteral, NumberLiteral #...
+          negate ? "false" : "true"
+        else
+          str = cond.javascript(:expression)
+          tmp = "t1" # TODO: need temporary variable!!!
+          if negate
+            "(#{tmp}=(#{str}),#{tmp}===false||#{tmp}===nil)"
+          else
+            "(#{tmp}=(#{str}),#{tmp}!==false&&#{tmp}!==nil)"
+          end
+        end
+      end
     end
 
     class Block
