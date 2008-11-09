@@ -34,7 +34,7 @@ module RubyJS
     class True
       include Expression
 
-      def javascript(as_expr)
+      def javascript(as_expression)
         "true"
       end
     end
@@ -42,7 +42,7 @@ module RubyJS
     class False
       include Expression
 
-      def javascript(as_expr)
+      def javascript(as_expression)
         "false"
       end
     end
@@ -50,7 +50,7 @@ module RubyJS
     class Nil
       include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "nil"
       end
     end
@@ -60,7 +60,7 @@ module RubyJS
 
       def brackets?() true end
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         @value.to_s
       end
     end
@@ -68,7 +68,7 @@ module RubyJS
     class StringLiteral
       include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         @string.inspect
       end
     end
@@ -79,7 +79,7 @@ module RubyJS
     class Self
       include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "this"
       end
     end
@@ -87,7 +87,7 @@ module RubyJS
     class If
       include Compound
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         cond = @condition.javascript(true)
         th = @then.javascript(as_expression)
         el = @else.javascript(as_expression)
@@ -105,7 +105,7 @@ module RubyJS
 
       def brackets?() raise end
 
-      def javascript(as_expression=false)
+      def javascript(as_expression)
         raise if as_expression
         @statements.map {|s| s.javascript(as_expression) + ";"}.join("\n")
       end
@@ -114,7 +114,7 @@ module RubyJS
     class ArgList
       def brackets?() raise end
 
-      def javascript(as_expression=true)
+      def javascript(as_expression)
         raise unless as_expression
         @elements.map {|e| e.javascript(as_expression)}.join(", ")
       end
@@ -123,7 +123,7 @@ module RubyJS
     class MethodCall
       include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
         fmt % [@receiver.javascript(true), @method_name.to_s, @arguments.javascript(true)] 
       end
@@ -134,7 +134,7 @@ module RubyJS
 
       def brackets?() raise end
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         @body.javascript(as_expression)
       end
     end
@@ -142,7 +142,7 @@ module RubyJS
     class DefineMethod
       def brackets?() raise end
 
-      def javascript(as_expression=false)
+      def javascript(as_expression)
         raise if as_expression
 
         args = @arguments.javascript_arglist
@@ -164,13 +164,12 @@ module RubyJS
         args.join(", ")
       end
 
-      def javascript_optional(as_expression=false)
-        raise if as_expression
+      def javascript_optional
         return nil unless @optional
 
         "switch(arguments.length) {\n" + 
         @optional.statements.each_with_index.map {|opt, i|
-          "case #{self.min_arity+i}: #{opt.javascript(as_expression)};"
+          "case #{self.min_arity+i}: #{opt.javascript(false)};"
         }.join("\n") + 
         "}\n"
       end
@@ -179,7 +178,7 @@ module RubyJS
     class LVar
       include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "#{@variable.name}"
       end
     end
@@ -189,7 +188,7 @@ module RubyJS
 
       def brackets?() true end
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "#{@variable.name} = #{@expr.javascript(true)}"
       end
     end
@@ -197,7 +196,7 @@ module RubyJS
     class IVar
       include Expression
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "#{@name}"
       end
     end
@@ -207,7 +206,7 @@ module RubyJS
 
       def brackets?() true end
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "#{@name} = #{@expr.javascript(true)}"
       end
     end
@@ -218,7 +217,7 @@ module RubyJS
       
       def brackets?() true end
 
-      def javascript(as_expression=nil)
+      def javascript(as_expression)
         "function() {\n" +
         @body.javascript(false) +
         "};" #+ 
