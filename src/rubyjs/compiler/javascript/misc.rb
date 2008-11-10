@@ -37,12 +37,6 @@ module RubyJS; class Compiler; class Node
     def brackets?; true end
   end
 
-  class StringLiteral
-    def as_javascript
-      @string.inspect
-    end
-  end
-
   #
   # TODO: Need to replace +this+ with "self" when inside an iterator.
   #
