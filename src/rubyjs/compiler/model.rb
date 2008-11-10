@@ -238,7 +238,7 @@ module RubyJS
     end 
 
     def namespace
-      RubyJS::Environment
+      ::RubyJS::Environment
     end 
 
     def namespace_scope_r

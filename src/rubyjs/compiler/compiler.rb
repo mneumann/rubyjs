@@ -41,6 +41,7 @@ module RubyJS
         @state.update(hash)
       end
     end
-  end
+
+  end # class Compiler
 
 end # module RubyJS
