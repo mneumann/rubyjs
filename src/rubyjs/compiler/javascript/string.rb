@@ -13,7 +13,14 @@ module RubyJS; class Compiler; class Node
     #
     def as_javascript
       pieces = @pieces.reject {|piece| piece.is(StringLiteral) and piece.string.empty? }.
-        map {|piece| piece.javascript(:expression) }
+        map {|piece| 
+          str = piece.javascript(:expression)
+          if piece.is(EvalString)
+            "(#{str}).to_s()"
+          else
+            str
+          end
+        }
 
       case pieces.size
       when 0
@@ -34,11 +41,36 @@ module RubyJS; class Compiler; class Node
     def as_javascript
       @string
     end
+
+    def brackets?; true end
   end
 
+  #
+  # A backtick string (inline Javascript) which contains Ruby expressions. 
+  #
+  class DynamicBacktickString
+    def as_javascript
+      @pieces.map {|piece|
+        if piece.is(StringLiteral)
+          piece.string
+        else
+          piece.javascript(:expression)
+        end
+      }.join("")
+    end
+
+    def brackets?; true end
+  end
+
+  #
+  # This is the #{xxx} expression which occurs within a String literal.
+  #
+  # The real Javascript generation takes place in the parent nodes
+  # (DynamicString, DynamicBacktickString).
+  #
   class EvalString
     def as_javascript
-      "(" + @expr.javascript(:expression) + ").to_s()"
+      @expr.javascript(:expression)
     end
   end
 
