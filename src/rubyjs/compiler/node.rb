@@ -109,7 +109,7 @@ module RubyJS; class Compiler
     #
     # Is +self+ of class +klass+? 
     #
-    def is(klass)
+    def is?(klass)
       self.is_a?(klass)
     end
 

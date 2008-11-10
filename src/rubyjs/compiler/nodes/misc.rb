@@ -12,9 +12,9 @@ module RubyJS; class Compiler; class Node
       @line, @file, @child = line, file, child
     end
 
-    def is(klass)
+    def is?(klass)
       if @child
-        @child.is(klass)
+        @child.is?(klass)
       else
         false
       end

@@ -12,10 +12,10 @@ module RubyJS; class Compiler; class Node
     # optimization for the "#{...}" case.
     #
     def as_javascript
-      pieces = @pieces.reject {|piece| piece.is(StringLiteral) and piece.string.empty? }.
+      pieces = @pieces.reject {|piece| piece.is?(StringLiteral) and piece.string.empty? }.
         map {|piece| 
           str = piece.javascript(:expression)
-          if piece.is(EvalString)
+          if piece.is?(EvalString)
             "(#{str}).to_s()"
           else
             str
@@ -51,7 +51,7 @@ module RubyJS; class Compiler; class Node
   class DynamicBacktickString
     def as_javascript
       @pieces.map {|piece|
-        if piece.is(StringLiteral)
+        if piece.is?(StringLiteral)
           piece.string
         else
           piece.javascript(:expression)
