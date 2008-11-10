@@ -17,6 +17,13 @@ module RubyJS
       end
 
       #
+      # Returns the registered kind of the class of object +self+.
+      #
+      def kind
+        self.class.kind
+      end
+
+      #
       # Creates a Node for the given +compiler+ and process +sexp+.
       #
       def self.create(compiler, sexp)
@@ -86,8 +93,27 @@ module RubyJS
       #
       # Used for accessing/propagating state within the AST
       #
-      def get(key) @compiler.get(key) end
-      def set(hash, &block) @compiler.set(hash, &block) end
+
+      #
+      # Access dynamic state variables
+      #
+      def get(key)
+        @compiler.get(key)
+      end
+
+      #
+      # Set dynamic state variables which propagate through the AST 
+      #
+      def set(hash, &block)
+        @compiler.set(hash, &block)
+      end
+
+      #
+      # Is +self+ of class +klass+? 
+      #
+      def is(klass)
+        self.is_a?(klass)
+      end
 
     end # class Node
 
