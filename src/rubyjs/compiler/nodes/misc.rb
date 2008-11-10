@@ -99,16 +99,6 @@ module RubyJS; class Compiler; class Node
     attr_accessor :start, :stop, :exclude_end
   end
 
-  class StringLiteral < Node
-    kind :str
-
-    def args(str)
-      @string = str
-    end
-
-    attr_accessor :string
-  end
-
   class ArrayLiteral < Node
     kind :array
 
@@ -117,21 +107,6 @@ module RubyJS; class Compiler; class Node
     end
 
     attr_accessor :elements
-  end
-
-  #----------------------------------------------
-  # Dynamic Literals
-  #----------------------------------------------
-
-  class DynamicString < Node
-    kind :dstr
-
-    def args(str, *pieces)
-      @string = str
-      @pieces = pieces
-    end
-
-    attr_accessor :string, :pieces
   end
 
   class Block < Node
