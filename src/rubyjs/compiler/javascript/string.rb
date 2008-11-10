@@ -7,7 +7,6 @@ module RubyJS; class Compiler; class Node
   end
 
   class DynamicString
-
     #
     # We optimize empty StringLiterals away and do a further
     # optimization for the "#{...}" case.
@@ -24,6 +23,16 @@ module RubyJS; class Compiler; class Node
       else
         "[" + pieces.join(",") + "].join('')"
       end
+    end
+  end
+
+  #
+  # In RubyJS the backtick string literals are used to insert inline
+  # Javascript into the generated Javascript code.
+  #
+  class BacktickString
+    def as_javascript
+      @string
     end
   end
 
