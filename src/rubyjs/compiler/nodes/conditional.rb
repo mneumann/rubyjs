@@ -45,4 +45,28 @@ module RubyJS; class Compiler; class Node
     end
   end
 
+  class Case < Node
+    kind :case
+
+    def args(cond, *clauses)
+      @condition = cond
+      @when_clauses = clauses
+      @else_clause = clauses.pop
+    end
+  end 
+
+  class When < Node
+    kind :when
+
+    def args(compare_list, body)
+      @compare_list, @body = compare_list, expand_nil(body) 
+
+      if @compare_list.is?(ArrayLiteral)
+        @compare_list = @compare_list.elements
+      else
+        raise
+      end
+    end
+  end
+
 end; end; end # class Node; class Compiler; module RubyJS
