@@ -1,5 +1,7 @@
 module RubyJS; class Compiler
 
+  require 'set'
+
   class LocalVariable
     attr_reader :name, :scope
 
@@ -12,12 +14,28 @@ module RubyJS; class Compiler
   # Local variable scope
   #
   class LocalScope
-    attr_reader :node, :variables
+    attr_reader :node, :variables, :kind, :child_scopes
 
-    def initialize(node, enclosing_scope=nil)
+    def initialize(node, enclosing_scope=nil, kind=:method)
       @node = node
-      @enclosing_scope = enclosing_scope
+      @child_scopes = Set.new
+      if @enclosing_scope = enclosing_scope
+        @enclosing_scope.register_child_scope(self)
+      end
+      @kind = kind
       @variables = Hash.new
+    end
+
+    def register_child_scope(sc)
+      @child_scopes.add(sc)
+    end
+
+    def method?
+      @kind == :method
+    end
+
+    def iter?
+      @kind == :iter
     end
 
     def find_variable(name, declare_if_not_found=false)

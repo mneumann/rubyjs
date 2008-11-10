@@ -1,5 +1,7 @@
 module RubyJS; class Compiler; class Node
 
+  # TODO: For-loop
+  
   class Loop < Node
     def consume(sexp)
       set(:iterator_scope => self) do
@@ -45,7 +47,7 @@ module RubyJS; class Compiler; class Node
       raise if res.size != 1
       res.first.iter = self 
 
-      set(:iterator_scope => self) { res.push(*super(rest)) }
+      set(:iterator_scope => self, :scope => LocalScope.new(self, get(:scope), :iter)) { res.push(*super(rest)) }
       return res
     end
 
