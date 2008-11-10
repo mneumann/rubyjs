@@ -15,6 +15,8 @@ module RubyJS; class Compiler; class Node
   #
   class And
     def as_javascript
+      @left.javascript + "&&" + @right.javascript
+=begin
       #(t1=a;  
       #t = a;
       #if (T(t)) b; else t;
@@ -47,7 +49,7 @@ module RubyJS; class Compiler; class Node
           ""
         end
       end
-
+=end
     end
   end
 
@@ -66,6 +68,7 @@ module RubyJS; class Compiler; class Node
   #
   class Or
     def as_javascript
+      @left.javascript + "||" + @right.javascript
     end
   end
 
