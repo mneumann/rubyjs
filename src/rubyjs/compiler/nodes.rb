@@ -409,24 +409,68 @@ module RubyJS
 
       attr_accessor :condition, :then, :else
     end
+     
+    #----------------------------------------------
+    # Iterator and Loop
+    #----------------------------------------------
 
-    class While < Node
-      kind :while
+    class Loop < Node
+      def consume(sexp)
+        set(:iterator_scope => self) do
+          super(sexp)
+        end
+      end
 
       def args(cond, body, check_first=true)
-        @condition, @body, @check_first = cond, expand_nil(body), check_first
+        @condition, @body, @check_first = cond, body, check_first
       end
-
-      attr_accessor :condition, :body, :check_first
     end
 
-    class Until < Node
+    class While < Loop
+      kind :while
+    end
+
+    class Until < Loop
       kind :until
+    end
 
-      def normalize(cond, body, check_first=true)
-        While.new_with_args(@compiler, cond, body, check_first)
+    class IteratorControl < Node
+      def args(argument=nil)
+        @iterator_scope = get(:iterator_scope) || raise("#{kind()} allowed only in loop or iterator") 
+        @argument = argument
       end
     end
+
+    class Break < IteratorControl
+      kind :break
+    end
+
+    class Next < IteratorControl 
+      kind :next
+    end
+
+    class Iter < Node
+      kind :iter
+
+      def consume(sexp)
+        method_call, *rest = *sexp
+
+        res = super([method_call]) 
+        raise if res.size != 1
+        res.first.iter = self 
+
+        set(:iterator_scope => self) { res.push(*super(rest)) }
+        return res
+      end
+
+      def args(method_call, block_assignment, body=nil)
+        @method_call, @block_assignment, @body = method_call, block_assignment, expand_nil(body)
+      end
+    end
+
+    #----------------------------------------------
+    # 
+    #----------------------------------------------
 
     class Block < Node
       kind :block
@@ -623,39 +667,12 @@ module RubyJS
     end
 
     #----------------------------------------------
-    # Control flow 
+    # Method calls
     #----------------------------------------------
 
-    class Return < Node
-      kind :return
-
-      def args(argument=nil)
-        @argument = argument
-      end
-
-      attr_accessor :argument
-    end
-
-    class Iter < Node
-      kind :iter
-
-      def args(method_call, block_assignment, body)
-        @method_call, @block_assignment, @body = method_call, block_assignment, body
-      end
-
-      attr_accessor :method_call, :block_assignment, :body
-    end
-
-    #
-    # This node type is introduced in FCall.
-    #
     class ArgList < ArrayLiteral
       kind :arglist
     end
-
-    #----------------------------------------------
-    # Method calls
-    #----------------------------------------------
 
     class MethodCall < Node
       kind :call
@@ -671,12 +688,16 @@ module RubyJS
         end
       end
 
-      attr_accessor :receiver, :method_name, :arguments
+      attr_accessor :iter
     end
 
-    #----------------------------------------------
-    # Super calls
-    #----------------------------------------------
+    class Return < Node
+      kind :return
+
+      def args(argument=nil)
+        @argument = argument
+      end
+    end
 
     #
     # Super call.
