@@ -3,6 +3,7 @@ require 'javascript/variable'
 require 'javascript/conditional'
 require 'javascript/iterator'
 require 'javascript/method'
+require 'javascript/string'
 
 module RubyJS; class Compiler
   

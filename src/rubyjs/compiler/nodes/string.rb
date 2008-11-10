@@ -6,6 +6,8 @@ module RubyJS; class Compiler; class Node
     def args(string)
       @string = string
     end
+
+    attr_reader :string
   end
 
   #
@@ -16,9 +18,10 @@ module RubyJS; class Compiler; class Node
   class DynamicString < Node
     kind :dstr
 
-    def args(string, *pieces)
-      @string = string
+    def args(*pieces)
+      raise if pieces.empty?
       @pieces = pieces
+      @pieces[0] = StringLiteral.new_with_args(@compiler, @pieces[0])
     end
   end
 
@@ -39,9 +42,10 @@ module RubyJS; class Compiler; class Node
   class DynamicBacktickString < Node
     kind :dxstr
 
-    def args(string, *pieces)
-      @string = string
+    def args(*pieces)
+      raise if pieces.empty?
       @pieces = pieces
+      @pieces[0] = StringLiteral.new_with_args(@compiler, @pieces[0])
     end
   end  
 

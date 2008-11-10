@@ -6,4 +6,31 @@ module RubyJS; class Compiler; class Node
     end
   end
 
+  class DynamicString
+
+    #
+    # We optimize empty StringLiterals away and do a further
+    # optimization for the "#{...}" case.
+    #
+    def as_javascript
+      pieces = @pieces.reject {|piece| piece.is(StringLiteral) and piece.string.empty? }.
+        map {|piece| piece.javascript(:expression) }
+
+      case pieces.size
+      when 0
+        raise
+      when 1
+        pieces.first
+      else
+        "[" + pieces.join(",") + "].join('')"
+      end
+    end
+  end
+
+  class EvalString
+    def as_javascript
+      "(" + @expr.javascript(:expression) + ").to_s()"
+    end
+  end
+
 end; end; end # class Node; class Compiler; module RubyJS
