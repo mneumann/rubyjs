@@ -66,4 +66,17 @@ module RubyJS; class Compiler; class Node
     def brackets?; raise end
   end
 
+  class Return
+    #
+    # We don't want "return" to be generate within Node#javascript.
+    #
+    def compound?; true end
+
+    def as_javascript
+      # FIXME: implement as expression
+      raise if get(:mode) == :expression
+      "return (#{@argument.javascript(:expression)})"
+    end
+  end
+
 end; end; end # class Node; class Compiler; module RubyJS

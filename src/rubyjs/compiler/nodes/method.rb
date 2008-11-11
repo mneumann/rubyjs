@@ -138,7 +138,7 @@ module RubyJS; class Compiler; class Node
     kind :return
 
     def args(argument=nil)
-      @argument = argument
+      @argument = expand_nil(argument)
     end
   end
 
