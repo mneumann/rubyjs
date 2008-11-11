@@ -115,6 +115,8 @@ module RubyJS; class Compiler; class Node
     def args(name)
       @name = name.to_s
     end
+
+    attr_reader :name
   end
 
   class Block < Node
