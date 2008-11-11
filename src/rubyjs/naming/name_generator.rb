@@ -32,7 +32,6 @@ module RubyJS
     # this overflows, we introduce a new most significant digit and set
     # this to "zero".
     #
-
     def next
       loop do
         name = @digits.reverse.map {|d| @alphabet[d] }.join("")
