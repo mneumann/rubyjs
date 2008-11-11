@@ -17,12 +17,11 @@ module RubyJS
     # execution of the block.
     #
     def RubyJS__install_require
-      # install "require" handler
       alias RubyJS__old_require require
       begin
+        alias require RubyJS__require
         yield
       ensure
-        # change "require" handler back to original
         alias require RubyJS__old_require
       end
     end
