@@ -1,7 +1,7 @@
 module RubyJS
 
-  require 'method_extractor'
   require 'set'
+  require 'rubyjs/method_extractor'
 
   class MethodModel
     attr_reader :name, :sexp, :entity_model

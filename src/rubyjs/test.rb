@@ -1,15 +1,17 @@
 require 'rubygems'
 gem 'ParseTree', '> 3.0.0'
 
+$LOAD_PATH.unshift ".."
+
 require 'pp'
 
-require 'compiler'
-require 'scope'
-require 'node'
-require 'nodes'
-require 'javascript'
-require 'model'
-require 'rewrites'
+require 'rubyjs/compiler'
+require 'rubyjs/scope'
+require 'rubyjs/node'
+require 'rubyjs/nodes'
+require 'rubyjs/javascript'
+require 'rubyjs/model'
+require 'rubyjs/rewrites'
 
 module RubyJS
   module Environment

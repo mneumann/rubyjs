@@ -1,9 +1,9 @@
-require 'javascript/misc'
-require 'javascript/variable'
-require 'javascript/conditional'
-require 'javascript/iterator'
-require 'javascript/method'
-require 'javascript/string'
+require 'rubyjs/javascript/misc'
+require 'rubyjs/javascript/variable'
+require 'rubyjs/javascript/conditional'
+require 'rubyjs/javascript/iterator'
+require 'rubyjs/javascript/method'
+require 'rubyjs/javascript/string'
 
 module RubyJS; class Compiler
   
