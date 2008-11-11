@@ -1,0 +1,8 @@
+require 'rubyjs/compiler/nodes/node'
+require 'rubyjs/compiler/nodes/misc'
+require 'rubyjs/compiler/nodes/variable'
+require 'rubyjs/compiler/nodes/conditional'
+require 'rubyjs/compiler/nodes/iterator'
+require 'rubyjs/compiler/nodes/method'
+require 'rubyjs/compiler/nodes/string'
+require 'rubyjs/compiler/nodes/regexp'

@@ -14,12 +14,11 @@ module RubyJS
   module Environment; end
 end
 
-require 'rubyjs/compiler'
-require 'rubyjs/scope'
-require 'rubyjs/nodes/all'
+require 'rubyjs/compiler/compiler'
+require 'rubyjs/compiler/scope'
+require 'rubyjs/compiler/rewrites'
+require 'rubyjs/compiler/nodes/all'
+
 require 'rubyjs/javascript/nodes/all'
 require 'rubyjs/model'
-require 'rubyjs/rewrites'
 require 'rubyjs/eval_into'
-require 'rubyjs/naming/name_generator'
-require 'rubyjs/naming/name_cache'

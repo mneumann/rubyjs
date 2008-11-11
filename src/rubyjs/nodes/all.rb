@@ -1,8 +1,0 @@
-require 'rubyjs/nodes/node'
-require 'rubyjs/nodes/misc'
-require 'rubyjs/nodes/variable'
-require 'rubyjs/nodes/conditional'
-require 'rubyjs/nodes/iterator'
-require 'rubyjs/nodes/method'
-require 'rubyjs/nodes/string'
-require 'rubyjs/nodes/regexp'
