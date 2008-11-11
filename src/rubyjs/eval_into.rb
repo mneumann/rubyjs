@@ -2,44 +2,57 @@
 # Evals into the given module_scope.
 #
 # Copyright (c) 2007, 2008 by Michael Neumann (mneumann@ntecs.de).
-# All rights reserved.
 #
 
 module RubyJS
 
-  def eval_into(module_scope, &block)
-    $RUBYJS__MODULE_SCOPE = module_scope
-    $RUBYJS__LOADED ||= [] # avoids recursive loads
+  EvalInfoStruct = Struct.new(:module_scope, :loaded, :load_path, :eval_proc, :platform)
 
-    $RUBYJS__EVAL = proc {|str|
-      $RUBYJS__MODULE_SCOPE.module_eval(str)
-    }
+  EvalInfo = EvalInfoStruct.new
 
-    # install "require" handler
-    alias old_require require
-    def require(file)
-      ($RUBYJS__LOAD_PATH||['.']).each do |path|
-        name = File.expand_path(File.join(path, file + ".rb"))
-        if File.exists?(name)
-          if $RUBYJS__LOADED.include?(name)
+  class ::Object
+
+    #
+    # Installs the RubyJS__require handler as "require" for the
+    # execution of the block.
+    #
+    def RubyJS__install_require
+      # install "require" handler
+      alias RubyJS__old_require require
+      begin
+        yield
+      ensure
+        # change "require" handler back to original
+        alias require RubyJS__old_require
+      end
+    end
+
+    #
+    # A require method for code evaluated within RubyJS
+    #
+    def RubyJS__require(file)
+      (::RubyJS::EvalInfo.load_path || ['.']).each do |path|
+        name = ::File.expand_path(::File.join(path, file + ".rb"))
+        if ::File.exists?(name)
+          if ::RubyJS::EvalInfo.loaded.include?(name)
             return false
           else
-            $RUBYJS__LOADED << name
-            STDERR.puts "loading file: #{name}" if $DEBUG
-            $RUBYJS__EVAL.call(File.read(name)) 
-            
+            ::RubyJS::EvalInfo.loaded << name
+            ::RubyJS.log "loading file: #{name}"
+            ::RubyJS::EvalInfo.eval_proc.call(::File.read(name)) 
+
             #
             # load also platform specific file
             # load first matching platform
             #
 
-            ($RUBYJS__PLATFORM||[]).each do |plat|
-              plat_name = File.expand_path(File.join(path, file + "." + plat + ".rb"))
-              next unless File.exists?(plat_name)
-              unless $RUBYJS__LOADED.include?(plat_name)
-                $RUBYJS__LOADED << plat_name
-                STDERR.puts "loading platform specific file: #{plat_name}" if $DEBUG
-                $RUBYJS__EVAL.call(File.read(plat_name))
+            (::RubyJS::EvalInfo.platform || []).each do |plat|
+              plat_name = ::File.expand_path(::File.join(path, file + "." + plat + ".rb"))
+              next unless ::File.exists?(plat_name)
+              unless ::RubyJS::EvalInfo.loaded.include?(plat_name)
+                ::RubyJS::EvalInfo.loaded << plat_name
+                ::RubyJS.log "loading platform specific file: #{plat_name}"
+                ::RubyJS::EvalInfo.eval_proc.call(::File.read(plat_name))
                 break
               end
             end
@@ -52,12 +65,19 @@ module RubyJS
       end
       raise ::RuntimeError, "require: #{file} not found"
     end
-
-
-    block.call($RUBYJS__EVAL)
-
-    # change "require" handler back to original
-    alias require old_require
   end
 
-end
+  def self.eval_into(module_scope, &block)
+    ::RubyJS::EvalInfo.module_scope = module_scope
+    ::RubyJS::EvalInfo.loaded ||= [] # avoids recursive loads
+
+    ::RubyJS::EvalInfo.eval_proc = proc {|str|
+      ::RubyJS::EvalInfo.module_scope.module_eval(str)
+    }
+
+    RubyJS__install_require {
+      block.call(::RubyJS::EvalInfo.eval_proc)
+    }
+  end
+
+end # module RubyJS
