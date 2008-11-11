@@ -66,7 +66,9 @@ module RubyJS
     end
   end
 
-  def self.eval_into(module_scope, &block)
+  def self.eval_into(module_scope, load_path=nil, platform=nil, &block)
+    ::RubyJS::EvalInfo.load_path = load_path
+    ::RubyJS::EvalInfo.platform = platform
     ::RubyJS::EvalInfo.module_scope = module_scope
     ::RubyJS::EvalInfo.loaded ||= [] # avoids recursive loads
 

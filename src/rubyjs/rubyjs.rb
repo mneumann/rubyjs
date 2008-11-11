@@ -10,4 +10,14 @@ module RubyJS
   def self.log(message)
     STDERR.puts(message) if debug()
   end
+
+  module Environment; end
 end
+
+require 'rubyjs/compiler'
+require 'rubyjs/scope'
+require 'rubyjs/nodes/all'
+require 'rubyjs/javascript/all'
+require 'rubyjs/model'
+require 'rubyjs/rewrites'
+require 'rubyjs/eval_into'
