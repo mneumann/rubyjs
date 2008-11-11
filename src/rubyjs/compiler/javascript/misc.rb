@@ -46,6 +46,13 @@ module RubyJS; class Compiler; class Node
     end
   end
 
+  # XXX
+  class Const
+    def as_javascript
+      @name
+    end
+  end
+
   class Block
     def as_javascript
       raise if get(:mode) == :expression
@@ -61,5 +68,6 @@ module RubyJS; class Compiler; class Node
     def brackets?; raise end
     def compound?; true end
   end
+
 
 end; end; end # class Node; class Compiler; module RubyJS
