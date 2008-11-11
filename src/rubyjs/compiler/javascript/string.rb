@@ -42,6 +42,40 @@ module RubyJS; class Compiler; class Node
       @string
     end
 
+    #
+    # This is to optimize out trailing "return nil" statements when
+    # using inline Javascript. For example:
+    #
+    #     def m
+    #       `...`
+    #       nil
+    #     end
+    #
+    # will generate
+    #
+    #     function m() {
+    #       ...;
+    #       return nil
+    #     }
+    #
+    # To avoid the trailing "return nil", one can write an empty
+    # backticks string (``) as the last statement:
+    #
+    #     def m
+    #       `...`
+    #       ``
+    #     end
+    #
+    # This will generate:
+    #
+    #     function m() {
+    #       ...;
+    #     }
+    #
+    def compound?
+      @string.empty? 
+    end
+
     def brackets?; true end
   end
 
