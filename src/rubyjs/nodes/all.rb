@@ -1,3 +1,4 @@
+require 'rubyjs/nodes/node'
 require 'rubyjs/nodes/misc'
 require 'rubyjs/nodes/variable'
 require 'rubyjs/nodes/conditional'
