@@ -11,15 +11,48 @@ module RubyJS; class Compiler; class Node
 
   class MethodCall
     def as_javascript
-      fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
-      #
-      # TODO: encode method_name
-      #
-      fmt % [
-        @receiver.javascript(:expression),
-        @method_name.to_s,
-        @arguments.javascript(:expression)
-      ]
+      if @receiver.is?(Const) and @receiver.name == 'RubyJS'
+        #
+        # Treat a special case.
+        #
+
+        raise unless @arguments.is?(ArgList) and @arguments.elements.size == 1
+        arg = @arguments.elements.first
+        if arg.is?(Literal)
+          value = arg.value
+          raise unless value.kind_of?(Symbol)
+          value = value.to_s
+        elsif arg.is?(StringLiteral)
+          value = arg.string
+        else
+          raise
+        end
+
+        # XXX encode value accordingly
+        case @method_name
+        when 'attr'
+          value
+        when 'inline'
+          value
+        when 'runtime'
+          value
+        when 'method'
+          value
+        else
+          raise
+        end
+
+      else
+        fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
+        #
+        # TODO: encode method_name
+        #
+        fmt % [
+          @receiver.javascript(:expression),
+          @method_name,
+          @arguments.javascript(:expression)
+        ]
+      end
     end
   end
 
