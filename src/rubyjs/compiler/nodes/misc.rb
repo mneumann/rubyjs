@@ -109,6 +109,14 @@ module RubyJS; class Compiler; class Node
     attr_accessor :elements
   end
 
+  class Const < Node
+    kind :const
+
+    def args(name)
+      @name = name.to_s
+    end
+  end
+
   class Block < Node
     kind :block
 
