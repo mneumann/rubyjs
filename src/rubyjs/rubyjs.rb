@@ -17,7 +17,7 @@ end
 require 'rubyjs/compiler'
 require 'rubyjs/scope'
 require 'rubyjs/nodes/all'
-require 'rubyjs/javascript/all'
+require 'rubyjs/javascript/nodes/all'
 require 'rubyjs/model'
 require 'rubyjs/rewrites'
 require 'rubyjs/eval_into'

@@ -1,7 +1,0 @@
-require 'rubyjs/javascript/node'
-require 'rubyjs/javascript/misc'
-require 'rubyjs/javascript/variable'
-require 'rubyjs/javascript/conditional'
-require 'rubyjs/javascript/iterator'
-require 'rubyjs/javascript/method'
-require 'rubyjs/javascript/string'
