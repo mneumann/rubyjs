@@ -80,7 +80,7 @@ module RubyJS; class Compiler; class Node
       args = @arguments.javascript_arglist
       opt = @arguments.javascript_optional
 
-      "function #{@method_name}(#{args}){\n" +
+      "function(#{args}){\n" +
         variable_declaration() + 
         (opt ? opt + ";" : "") + @body.javascript(:last) + "}"
     end
