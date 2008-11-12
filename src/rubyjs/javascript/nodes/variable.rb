@@ -16,13 +16,15 @@ module RubyJS; class Compiler; class Node
 
   class IVar
     def as_javascript
-      "#{@name}"
+      # TODO: use "self" in iterator
+      "this." + get(:encoder).encode_instance_variable(@name)
     end
   end
 
   class IAsgn
     def as_javascript
-      "#{@name} = #{@expr.javascript(:expression)}"
+      # TODO: use "self" in iterator
+      "this." + get(:encoder).encode_instance_variable(@name) + " = " + @expr.javascript(:expression)
     end
 
     def brackets?; true end

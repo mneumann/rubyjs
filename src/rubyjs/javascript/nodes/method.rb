@@ -49,7 +49,7 @@ module RubyJS; class Compiler; class Node
         #
         fmt % [
           @receiver.javascript(:expression),
-          @method_name,
+          get(:encoder).encode_method(@method_name),
           @arguments.javascript(:expression)
         ]
       end
