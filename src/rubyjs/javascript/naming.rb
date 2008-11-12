@@ -6,7 +6,13 @@ module RubyJS
   class JavascriptNameEncoder
 
     def initialize
-      @cache = NameCache.new(NameGenerator.new)
+      @attr_cache = new_cache()
+      @method_cache = new_cache()
+      @ivar_cache = new_cache()
+      @runtime_cache = new_cache()
+      @global_cache = new_cache()
+      @constant_cache = new_cache()
+      @local_cache = new_cache()
     end
 
     def encode_nil
@@ -19,7 +25,7 @@ module RubyJS
     # Scope: Dot-scope
     #
     def encode_attr(name)
-      "a$" + @cache.find_or_create(name.to_s)
+      "a$" + @attr_cache.find_or_create(name.to_s)
     end
 
     #
@@ -28,7 +34,7 @@ module RubyJS
     # Scope: Dot-scope
     #
     def encode_method(name)
-      "m$" + @cache.find_or_create(name.to_s)
+      "m$" + @method_cache.find_or_create(name.to_s)
     end
 
     #
@@ -38,7 +44,7 @@ module RubyJS
     #
     def encode_instance_variable(name)
       raise ArgumentError unless name.to_s[0,1] == '@'
-      "i$" + @cache.find_or_create(name.to_s)
+      "i$" + @ivar_cache.find_or_create(name.to_s)
     end
 
     #
@@ -47,7 +53,7 @@ module RubyJS
     # Scope: Global
     #
     def encode_runtime(name)
-      "r$" + @cache.find_or_create(name.to_s)
+      "r$" + @runtime_cache.find_or_create(name.to_s)
     end
 
     #
@@ -57,7 +63,7 @@ module RubyJS
     #
     def encode_global_variable(name)
       raise ArgumentError unless name.to_s[0,1] == '$'
-      "g$" + @cache.find_or_create(name.to_s)
+      "g$" + @global_cache.find_or_create(name.to_s)
     end
     
     #
@@ -67,12 +73,21 @@ module RubyJS
     #
     def encode_constant(name)
       raise ArgumentError unless ('A'..'Z').include?(name.to_s[0,1])
-      "c$" + @cache.find_or_create(name.to_s)
+      "c$" + @constant_cache.find_or_create(name.to_s)
     end
 
+    #
+    # Naming for local variables
+    #
     def encode_local_variable(name)
       raise ArgumentError if ('A'..'Z').include?(name.to_s[0,1])
-      "_" + @cache.find_or_create(name.to_s)
+      "_" + @local_cache.find_or_create(name.to_s)
+    end
+
+    protected
+
+    def new_cache
+      NameCache.new(NameGenerator.new)
     end
   end
 
