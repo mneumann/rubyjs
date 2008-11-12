@@ -48,6 +48,13 @@ module RubyJS; class Compiler
       end
     end
 
+    def all_variables_recursive(&block)
+      @variables.each_value(&block)
+      @child_scopes.each {|cs|
+        cs.all_variables_recursive(&block)
+      }
+    end
+
     #
     # Variables are always declared in the outer most local scope
     #

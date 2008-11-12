@@ -55,17 +55,18 @@ module RubyJS; class Compiler; class Node
         case arg[0,1]
         when '*'
           raise if @catch_all
-          arg = arg[1..-1] 
-          @catch_all = arg
+          @catch_all = get(:scope).find_variable(arg[1..-1], true)
         when '&'
           raise if @block
-          arg = arg[1..-1] 
-          @block = arg
+          @block = get(:scope).find_variable(arg[1..-1], true)
         else
-          @arguments << arg
+          @arguments << get(:scope).find_variable(arg, true)
         end
-        get(:scope).find_variable(arg, true)
       }
+    end
+
+    def variables
+      (@arguments + [@catch_all, @block]).compact
     end
 
     def min_arity

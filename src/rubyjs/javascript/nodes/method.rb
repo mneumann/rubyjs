@@ -71,8 +71,22 @@ module RubyJS; class Compiler; class Node
 
       args = @arguments.javascript_arglist
       opt = @arguments.javascript_optional
+
       "function #{@method_name}(#{args}){\n" +
+        variable_declaration() + 
         (opt ? opt + ";" : "") + @body.javascript(:last) + "}"
+    end
+
+    def variable_declaration
+      arr = (@scope.variables.values - @arguments.variables).map {|var|
+        get(:encoder).encode_local_variable(var.name)
+      }
+
+      if arr.empty?
+        ""
+      else
+        "var " + arr.join(',') + ";"
+      end
     end
 
     def brackets?; raise end
@@ -80,9 +94,9 @@ module RubyJS; class Compiler; class Node
 
   class MethodArguments
     def javascript_arglist
-      args = @arguments 
+      args = @arguments.map {|a| get(:encoder).encode_local_variable(a) }
       if @block and not @catch_all
-        args += ["_", @block]
+        args += ["_", get(:encoder).encode_local_variable(@block)]
       end
       args.join(", ")
     end

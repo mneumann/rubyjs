@@ -5,6 +5,7 @@ module RubyJS
 
   class MethodModel
     attr_reader :name, :sexp, :entity_model
+    attr_accessor :node # the associated Compiler::Node
 
     def initialize(entity_model, name, sexp, is_class_method=false)
       @entity_model = entity_model

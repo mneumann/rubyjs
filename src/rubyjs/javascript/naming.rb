@@ -69,6 +69,11 @@ module RubyJS
       raise ArgumentError unless ('A'..'Z').include?(name.to_s[0,1])
       "c$" + @cache.find_or_create(name.to_s)
     end
+
+    def encode_local_variable(name)
+      raise ArgumentError if ('A'..'Z').include?(name.to_s[0,1])
+      "_" + @cache.find_or_create(name.to_s)
+    end
   end
 
 end
