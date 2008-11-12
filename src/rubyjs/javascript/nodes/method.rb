@@ -28,16 +28,8 @@ module RubyJS; class Compiler; class Node
           raise
         end
 
-        # XXX encode value accordingly
-        case @method_name
-        when 'attr'
-          value
-        when 'inline'
-          value
-        when 'runtime'
-          value
-        when 'method'
-          value
+        if self.respond_to?("plugin_#{@method_name}")
+          self.send("plugin_#{@method_name}", value)
         else
           raise
         end
@@ -53,6 +45,22 @@ module RubyJS; class Compiler; class Node
           @arguments.javascript(:expression)
         ]
       end
+    end
+
+    def plugin_attr(value)
+      get(:encoder).encode_attr(value)
+    end
+
+    def plugin_inline(value)
+      value
+    end
+
+    def plugin_runtime(value)
+      get(:encoder).encode_runtime(value)
+    end
+
+    def plugin_method(value)
+      get(:encoder).encode_method(value)
     end
   end
 
@@ -94,9 +102,9 @@ module RubyJS; class Compiler; class Node
 
   class MethodArguments
     def javascript_arglist
-      args = @arguments.map {|a| get(:encoder).encode_local_variable(a) }
+      args = @arguments.map {|var| get(:encoder).encode_local_variable(var.name) }
       if @block and not @catch_all
-        args += ["_", get(:encoder).encode_local_variable(@block)]
+        args += ["_", get(:encoder).encode_local_variable(@block.name)]
       end
       args.join(", ")
     end
