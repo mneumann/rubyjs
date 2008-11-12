@@ -167,13 +167,14 @@ module RubyJS; class Compiler; class Node
   #
   # Produced by:
   #
-  #   super
+  #   super # without parens
   #
   class ZSuper < Node
     kind :zsuper
 
-    #TODO
-    #get(:method_scope).add_super_call
+    def args
+      get(:method_scope).add_super_call
+    end
   end
 
   #
