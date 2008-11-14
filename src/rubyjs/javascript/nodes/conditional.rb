@@ -15,41 +15,14 @@ module RubyJS; class Compiler; class Node
   #
   class And
     def as_javascript
-      @left.javascript + "&&" + @right.javascript
-=begin
-      #(t1=a;  
-      #t = a;
-      #if (T(t)) b; else t;
+      raise unless get(:mode) == :expression
 
-      #
-      #@local_variables_need_no_initialization.add(tmp)
-      #"(#{tmp}=#{process(a)}, (#{tmp}!==false&&#{tmp}!==nil) ? (#{process(b)}) : #{tmp})"
-
-      cond = conditionalize(@left)
-
-      if get(:mode) == :expression
-        #
-        # In an expression, we always need the "then" and the "else"
-        # part!
-        #
-        # If the "else" part is missing, replace it with "nil".
-        #
-        "(#{cond} ? #{s1.javascript} : #{s2 ? s2.javascript : 'nil'})"
-      else
-        "if (#{cond}) {\n#{s1.javascript}\n}" + 
-        if s2
-          " else {\n#{s2.javascript}\n}" 
-        elsif get(:mode) == :last
-          #
-          # In case this is the last statement, and the else
-          # part is missing, generate one.
-          #
-          " else {return nil}"
-        else
-          ""
-        end
-      end
-=end
+      @scope.with_temporary_variable {|temp_var|
+        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        left = @left.javascript(:expression)
+        right = @right.javascript(:expression)
+        "(#{tmp}=(#{left}),(#{cond_is(tmp, true)})?(#{right}):#{tmp})"
+      }
     end
   end
 

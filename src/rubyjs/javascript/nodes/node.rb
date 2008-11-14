@@ -67,12 +67,16 @@ module RubyJS; class Compiler
         @scope.with_temporary_variable {|temp_var|
           str = cond.javascript(:expression)
           tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
-          if negate
-            "(#{tmp}=(#{str}),#{tmp}===false||#{tmp}===nil)"
-          else
-            "(#{tmp}=(#{str}),#{tmp}!==false&&#{tmp}!==nil)"
-          end
+          "(#{tmp}=(#{str}),#{cond_is(tmp, !negate)})"
         }
+      end
+    end
+
+    def cond_is(str, comparison)
+      if comparison
+        "#{str}!==false&&#{str}!==nil"
+      else
+        "#{str}===false||#{str}===nil"
       end
     end
 
