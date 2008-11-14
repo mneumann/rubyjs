@@ -7,6 +7,13 @@ module RubyJS; class Compiler
     Mapping = {}
 
     #
+    # Each Node has an associated scope which is by default the current
+    # dynamic variable of compiler.get(:scope) at the time of the
+    # creation of the node.
+    #
+    attr_accessor :scope
+
+    #
     # Registers a sexp type, or returns the registered sexp type.
     #
     def self.kind(name=nil)
@@ -58,6 +65,7 @@ module RubyJS; class Compiler
 
     def initialize(compiler)
       @compiler = compiler
+      @scope = compiler.get(:scope)
     end
 
     #

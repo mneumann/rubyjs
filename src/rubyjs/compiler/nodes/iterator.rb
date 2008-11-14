@@ -40,6 +40,11 @@ module RubyJS; class Compiler; class Node
   class Iter < Node
     kind :iter
 
+    def initialize(compiler)
+      super(compiler)
+      @scope = LocalScope.new(self, @scope, :iter)
+    end
+
     def consume(sexp)
       method_call, *rest = *sexp
 
@@ -47,7 +52,7 @@ module RubyJS; class Compiler; class Node
       raise if res.size != 1
       res.first.iter = self 
 
-      set(:iterator_scope => self, :scope => LocalScope.new(self, get(:scope), :iter)) { res.push(*super(rest)) }
+      set(:iterator_scope => self, :scope => @scope) { res.push(*super(rest)) }
       return res
     end
 

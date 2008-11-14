@@ -29,7 +29,7 @@ module RubyJS; class Compiler; class Node
       @method_name, @arguments, @body = method_name, arguments, body
     end
 
-    attr_reader :scope, :method_scope
+    attr_reader :method_scope
     attr_accessor :method_name, :arguments, :body
   end
 
