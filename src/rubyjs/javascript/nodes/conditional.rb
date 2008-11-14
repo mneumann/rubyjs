@@ -15,8 +15,6 @@ module RubyJS; class Compiler; class Node
   #
   class And
     def as_javascript
-      raise unless get(:mode) == :expression
-
       @scope.with_temporary_variable {|temp_var|
         tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
         left = @left.javascript(:expression)
@@ -34,19 +32,29 @@ module RubyJS; class Compiler; class Node
   # is equivalent to
   #
   #     if tmp = a
-  #       a
+  #       tmp 
   #     else
   #       b
   #     end
   #
   class Or
     def as_javascript
-      @left.javascript + "||" + @right.javascript
+      @scope.with_temporary_variable {|temp_var|
+        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        left = @left.javascript(:expression)
+        right = @right.javascript(:expression)
+        "(#{tmp}=(#{left}),(#{cond_is(tmp, true)})?(#{tmp}):#{right})"
+      }
     end
   end
 
   class Not
     def as_javascript
+      @scope.with_temporary_variable {|temp_var|
+        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        child = @child.javascript(:expression)
+        "(#{tmp}=(#{child}),#{cond_is(tmp, false)})"
+      }
     end
   end
 
