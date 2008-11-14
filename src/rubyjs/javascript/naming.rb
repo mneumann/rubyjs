@@ -21,6 +21,14 @@ module RubyJS; module JavascriptNaming
     end
 
     #
+    # Naming for temporary variables
+    #
+    def encode_temporary_variable(name)
+      raise ArgumentError unless name =~ /^\d+$/
+      "T#{name}"
+    end
+
+    #
     # Naming for local variables
     #
     def encode_local_variable(name)

@@ -64,13 +64,15 @@ module RubyJS; class Compiler
       when True, StringLiteral, NumberLiteral #...
         negate ? "false" : "true"
       else
-        str = cond.javascript(:expression)
-        tmp = "t1" # TODO: need temporary variable!!!
-        if negate
-          "(#{tmp}=(#{str}),#{tmp}===false||#{tmp}===nil)"
-        else
-          "(#{tmp}=(#{str}),#{tmp}!==false&&#{tmp}!==nil)"
-        end
+        @scope.with_temporary_variable {|temp_var|
+          str = cond.javascript(:expression)
+          tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+          if negate
+            "(#{tmp}=(#{str}),#{tmp}===false||#{tmp}===nil)"
+          else
+            "(#{tmp}=(#{str}),#{tmp}!==false&&#{tmp}!==nil)"
+          end
+        }
       end
     end
 
