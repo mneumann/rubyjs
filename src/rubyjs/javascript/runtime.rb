@@ -31,6 +31,16 @@ module Runtime
   end
 
   #
+  # +throw+ in Javascript is a statement which cannot appear inside an
+  # expression. To overcome this limitation we wrap +throw+ inside a
+  # function. 
+  #
+  def fn_throw(exception)
+    `throw(#{exception})`
+    ``
+  end
+
+  #
   # Implements the behaviour of Ruby's "and" operator
   #
   def ruby_and(a, b)
@@ -60,16 +70,6 @@ module Runtime
   #
   def ruby_false?(cond)
     `#{cond} === #{false} || #{cond} === #{nil}`
-  end
-
-  #
-  # +throw+ in Javascript is a statement which cannot appear inside an
-  # expression. To overcome this limitation we wrap +throw+ inside a
-  # function. 
-  #
-  def fn_throw(exception)
-    `throw(#{exception})`
-    ``
   end
 
   def IterJump(return_value, scope)
