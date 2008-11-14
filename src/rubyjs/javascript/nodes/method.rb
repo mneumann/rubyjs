@@ -80,14 +80,24 @@ module RubyJS; class Compiler; class Node
       args = @arguments.javascript_arglist
       opt = @arguments.javascript_optional
 
+      #
+      # We have to generate the body before generating
+      # the variable declarations, as within the body temporary
+      # variables might be allocated.
+      #
+      body = @body.javascript(:last)
+
       "function(#{args}){\n" +
         variable_declaration() + 
-        (opt ? opt + ";" : "") + @body.javascript(:last) + "}"
+        (opt ? opt + ";" : "") + body + "}"
     end
 
     def variable_declaration
       arr = (@scope.variables.values - @arguments.variables).map {|var|
         get(:local_encoder).encode_local_variable(var.name)
+      } 
+      arr += (@scope.temporary_variables.values).map {|var|
+        get(:local_encoder).encode_temporary_variable(var.name)
       }
 
       if arr.empty?
