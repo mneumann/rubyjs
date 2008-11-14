@@ -8,7 +8,7 @@ module Runtime
     #{RubyJS.runtime :MetaClass}.#{RubyJS.method :name}  = function() { return "MetaClass" }; 
     #{RubyJS.runtime :MetaClass}.#{RubyJS.method :class} = function() { return this }; 
 
-    nil = new #{RubyJS.runtime :NilClass}();`
+    #{nil} = new #{RubyJS.runtime :NilClass}();`
     ``
   end
 
