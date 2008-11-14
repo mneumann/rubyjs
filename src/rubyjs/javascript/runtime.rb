@@ -31,6 +31,38 @@ module Runtime
   end
 
   #
+  # Implements the behaviour of Ruby's "and" operator
+  #
+  def ruby_and(a, b)
+    `(#{a} !== #{false} && #{a} !== #{nil}) ? #{b} : #{a}`
+  end
+
+  #
+  # Implements the behaviour of Ruby's "or" operator
+  #
+  def ruby_or(a, b)
+    `(#{a} !== #{false} && #{a} !== #{nil}) ? #{a} : #{b}`
+  end
+
+  #
+  # Implements a check for Ruby's sense of "true"-ness:
+  #
+  # true <==> (not false) and (not nil)
+  #
+  def ruby_true?(cond)
+    `#{cond} !== #{false} && #{cond} !== #{nil}`
+  end
+
+  #
+  # Implements a check for Ruby's sense of "false"-ness:
+  #
+  # false <==> false or nil
+  #
+  def ruby_false?(cond)
+    `#{cond} === #{false} || #{cond} === #{nil}`
+  end
+
+  #
   # +throw+ in Javascript is a statement which cannot appear inside an
   # expression. To overcome this limitation we wrap +throw+ inside a
   # function. 
