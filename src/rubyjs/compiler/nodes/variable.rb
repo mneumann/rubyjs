@@ -6,7 +6,7 @@ module RubyJS; class Compiler; class Node
   class LAsgn < Node
     kind :lasgn
 
-    def args(name, expr)
+    def args(name, expr=nil)
       @variable = get(:scope).find_variable(name, true) || raise("Undefined variable #{name}")
       @expr = expr
     end
@@ -40,7 +40,7 @@ module RubyJS; class Compiler; class Node
   class GAsgn < Node
     kind :gasgn
 
-    def args(name, expr)
+    def args(name, expr=nil)
       @name, @expr = name, expr
     end
   end
@@ -62,7 +62,7 @@ module RubyJS; class Compiler; class Node
   class IAsgn < Node
     kind :iasgn
 
-    def args(name, expr)
+    def args(name, expr=nil)
       @name, @expr = name.to_s, expr
     end
   end
