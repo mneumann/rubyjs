@@ -94,17 +94,14 @@ module RubyJS; class Compiler; class Node
   #
   #   [1,2,3].each(&a)
   #
-  # In this example, +block+ is [:lvar, :a] and +body+ is
-  # the method call [1,2,3].each.
+  # In this example, +block+ is [:lvar, :a].
   #
   class BlockPass < Node
     kind :block_pass
 
-    def args(block, body)
-      @block, @body = block, body
+    def args(block)
+      @block = block
     end
-
-    attr_accessor :block, :body
   end
 
   #----------------------------------------------
