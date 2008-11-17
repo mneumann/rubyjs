@@ -15,21 +15,9 @@ module RubyJS; class Compiler; class Node
         #
         # Treat a special case.
         #
-
-        raise unless @arguments.is?(ArgList) and @arguments.elements.size == 1
-        arg = @arguments.elements.first
-        if arg.is?(Literal)
-          value = arg.value
-          raise unless value.kind_of?(Symbol)
-          value = value.to_s
-        elsif arg.is?(StringLiteral)
-          value = arg.string
-        else
-          raise
-        end
-
+        raise unless @arguments.is?(ArgList)
         if self.respond_to?("plugin_#{@method_name}")
-          self.send("plugin_#{@method_name}", value)
+          self.send("plugin_#{@method_name}", *@arguments.elements)
         else
           raise
         end
@@ -37,9 +25,6 @@ module RubyJS; class Compiler; class Node
       else
         get(:method_scope).add_method_call(@method_name)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
-        #
-        # TODO: encode method_name
-        #
         fmt % [
           @receiver.javascript(:expression),
           get(:encoder).encode_method(@method_name),
@@ -48,20 +33,24 @@ module RubyJS; class Compiler; class Node
       end
     end
 
-    def plugin_attr(value)
-      get(:encoder).encode_attr(value)
+    def plugin_attr(arg)
+      raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
+      get(:encoder).encode_attr(arg.value.to_s)
     end
 
-    def plugin_inline(value)
-      value
+    def plugin_inline(arg)
+      raise ArgumentError unless arg.is?(StringLiteral)
+      arg.string
     end
 
-    def plugin_runtime(value)
-      get(:encoder).encode_runtime(value)
+    def plugin_runtime(arg)
+      raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
+      get(:encoder).encode_runtime(arg.value.to_s)
     end
 
-    def plugin_method(value)
-      get(:encoder).encode_method(value)
+    def plugin_method(arg)
+      raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
+      get(:encoder).encode_method(arg.value.to_s)
     end
   end
 
