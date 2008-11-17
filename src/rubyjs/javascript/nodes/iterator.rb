@@ -36,6 +36,13 @@ module RubyJS; class Compiler; class Node
   end
 
 
+  class Yield
+    # TODO
+    def as_javascript
+      args = @arguments.map {|arg| arg.javascript(:expression)}.join(",")
+      "yield(#{args})"
+    end
+  end
 
   #
   # TODO
