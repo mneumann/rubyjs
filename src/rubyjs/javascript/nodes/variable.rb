@@ -32,4 +32,11 @@ module RubyJS; class Compiler; class Node
     def brackets?; true end
   end
 
+  class MAsgn
+    # TODO
+    def as_javascript
+      'TODO'
+    end
+  end
+
 end; end; end # class Node; class Compiler; module RubyJS
