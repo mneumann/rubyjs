@@ -37,6 +37,14 @@ module RubyJS; class Compiler; class Node
     kind :next
   end
 
+  class Yield < Node
+    kind :yield
+
+    def args(*arguments)
+      @arguments = arguments
+    end
+  end
+
   class Iter < Node
     kind :iter
 
