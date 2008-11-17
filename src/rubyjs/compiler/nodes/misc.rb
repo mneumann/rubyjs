@@ -130,4 +130,12 @@ module RubyJS; class Compiler; class Node
     attr_accessor :statements
   end
 
+  class Splat < Node
+    kind :splat
+
+    def args(expr)
+      @expr = expr
+    end
+  end
+
 end; end; end # class Node; class Compiler; module RubyJS
