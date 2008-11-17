@@ -59,16 +59,30 @@ module RubyJS; class Compiler; class Node
     end
   end
 
+  class Splat
+    # TODO
+    def as_javascript
+      'TODO'
+    end
+  end
+
+
   class Block
     def as_javascript
-      raise if get(:mode) == :expression
       raise if @statements.empty?
       last_i = @statements.size - 1
 
-      @statements.each_with_index.map {|stmt, i|
-        mode = if get(:mode) == :last and i == last_i then :last else :statement end
-        stmt.javascript(mode)
-      }.join(";\n")
+      case get(:mode)
+      when :expression
+        @statements.each_with_index.map {|stmt, i|
+          stmt.javascript
+        }.join(", ")
+      else
+        @statements.each_with_index.map {|stmt, i|
+          mode = if get(:mode) == :last and i == last_i then :last else :statement end
+          stmt.javascript(mode)
+        }.join(";\n")
+      end
     end
 
     def brackets?; raise end
