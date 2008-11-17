@@ -37,6 +37,12 @@ module RubyJS; class Compiler; class Node
     def brackets?; true end
   end
 
+  class ArrayLiteral
+    def as_javascript
+      "[" + @elements.map {|elem| elem.javascript(:expression)}.join(", ") + "]"
+    end
+  end
+
   #
   # TODO: Need to replace +this+ with "self" when inside an iterator.
   #
