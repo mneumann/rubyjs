@@ -52,6 +52,19 @@ module RubyJS; class Compiler; class Node
       raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
       get(:encoder).encode_method(arg.value.to_s)
     end
+
+    #
+    # Checks like "arg == null ? #{nil} : #{arg}" are pretty common in
+    # the core of RubyJS. This is a helper "macro" to avoid typing this
+    # over and over again.
+    #
+    def plugin_conv2ruby(arg)
+      @scope.with_temporary_variable {|temp_var|
+        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        js = arg.javascript(:expression)
+        "(#{tmp}=(#{js}),#{tmp}==null ? #{get(:encoder).encode_nil} : #{tmp})" 
+      }
+    end
   end
 
   class Scope

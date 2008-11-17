@@ -1,4 +1,3 @@
-# XXX
 #
 # Every method that returns an element has to
 # check this element for +null+. This is required
@@ -17,45 +16,22 @@ class Array
 
   include Enumerable
 
-=begin
-  def each() 
-
-    RubyJS::inline %{
-      for (var i=0; i < this.length; i++) {
-        #{yield RubyJS::js2ruby(`this[#{i}]`)}
-      }
-    }, :i
-
-    return self
-  end
-=end
-
-
-  def each() `
-    var elem;
-    for (var i=0; i < #<self>.length; i++) {
-      elem = #<self>[i];`
-      yield `(elem == null ? #<nil> : elem)`
-   `}
-    return #<self>`
+  def each
+   `for (#{i=0}; #{i} < #{self}.length; #{i}++) {
+      #{ yield RubyJS::conv2ruby(`#{self}[#{i}]`) }
+    }`
+    self
   end
 
-  def each_with_index() `  
-    var elem;
-    for (var i=0; i < #<self>.length; i++) {
-      elem = #<self>[i];` 
-      yield `(elem == null ? #<nil> : elem)`, `i`
-   `}
-    return #<self>`
+  def each_with_index
+   `for (#{i=0}; #{i} < #{self}.length; #{i}++) {
+      #{ yield RubyJS::conv2ruby(`#{self}[#{i}]`), i }
+    }`
+    self
   end
 
   def join(sep="")
-    str = ""
-    self.each_with_index {|elem, i|
-      str += elem.to_s
-      str += sep if i != self.length-1
-    }
-    str
+    `#{ map {|elem| elem.to_s} }.join(#{sep})`
   end
 
   def to_a
@@ -67,143 +43,117 @@ class Array
   end
 
   def self.new
-    `return []`
+    `[]`
   end
 
-  # TODO: test that otherArray is array 
-  def +(otherArray)
-    `return #<self>.concat(#<otherArray>)`
+  # TODO: test that +ary+ is array 
+  def +(ary)
+    `#{self}.concat(#{ary})`
   end
 
   def dup
-    `return #<self>.concat()`
+    `#{self}.concat()`
   end
 
   def reverse
-    `return #<self>.concat().reverse()`
+    `#{self}.concat().reverse()`
   end
 
   def reverse!
-    `#<self>.reverse(); return #<self>`
+    `#{self}.reverse()`
+    self
   end
 
   def length
-    `return #<self>.length`
+    `#{self}.length`
   end
 
   alias size length
 
   def first
-    #RubyJS::js2ruby(`this[0]`) 
-    `var v = #<self>[0]; return (v == null ? #<nil> : v)`
+    RubyJS::conv2ruby(`#{self}[0]`) 
   end
 
   def last
-    #RubyJS::js2ruby(`this[this.length-1]`) 
-    `var v = #<self>[#<self>.length - 1]; return (v == null ? #<nil> : v)`
+    RubyJS::conv2ruby(`#{self}[#{self}.length-1]`)
   end
 
   def clear
-    `#<self>.length=0; return #<self>` 
+    `#{self}.length = 0`
+    self
   end
 
   # TODO: check arrary bounds
   def [](i)
-    `var v = #<self>[#<i>]; return (v == null ? #<nil> : v)`
+    RubyJS::conv2ruby(`#{self}[#{i}]`)
   end
 
   def []=(i, val)
-    `return (#<self>[#<i>] = #<val>)`
+    `#{self}[#{i}] = #{val}`
   end
 
   def push(*args)
-    `#<self>.push.apply(#<self>, #<args>); return #<self>`
+    `#{self}.push.apply(#{self}, #{args})`
+    self
   end
 
   def <<(arg)
-    `#<self>.push(#<arg>); return #<self>`
+    `#{self}.push(#{arg})`
+    self
   end
 
   def pop() 
-    #RubyJS::js2ruby(`this.pop()`)
-    `
-    var elem = #<self>.pop();
-    return (elem == null ? #<nil> : elem)`
+    RubyJS::conv2ruby(`#{self}.pop()`)
   end
 
   def shift() 
-    #RubyJS::js2ruby(`this.shift()`)
-
-    `
-    var elem = #<self>.shift();
-    return (elem == null ? #<nil> : elem)`
+    RubyJS::conv2ruby(`#{self}.shift()`)
   end
 
-=begin
   def delete(obj)
+    del = false
     i = 0
-    while `#{i} < this.length` 
-      if obj.eql?(RubyJS::js2ruby(`this[#{i}]`))
-      else
+    while `#{i} < #{self}.length`
+      if obj.eql?(RubyJS::conv2ruby(`#{self}[#{i}]`))
+        `#{self}.splice(#{i}, 1)`
+        del = true
+        `if (#{i} < #{self}.length - 1) --#{i}` # stay at the current index unless we are at the last element
       end
+      `#{i}++`
     end
+    `#{del} ? #{obj} : #{nil}`
   end
-=end
 
-  def delete(obj) `
-    var del = false;
-    for (var i=0; i < #<self>.length; i++)
-    {
-      if (#<obj>.#<m:eql?>(#<nil>, #<self>[i]))
-      {
-        #<self>.splice(i,1);
-        del = true;
-        // stay at the current index unless we are at the last element!
-        if (i < #<self>.length-1) --i; 
-      }
-    }
-    return del ? #<obj> : #<nil>`
-  end
- 
   def unshift(*args)
-    `#<self>.unshift.apply(#<self>, #<args>); return #<self>`
+    `#{self}.unshift.apply(#{self}, #{args})`
+    self
   end
 
   def empty?
-    `return (#<self>.length == 0)`
+    `#{self}.length == 0`
   end
 
   def to_s
-    map {|i| i.to_s}.join
+    map {|elem| elem.to_s}.join
   end
 
   def inspect
-    str = "["
-    str += self.map {|elem| elem.inspect}.join(", ")
-    str += "]"
-    str
+    "[" + map {|elem| elem.inspect}.join(", ") + "]"
   end
 
-  def eql?(other)
-    `
-    if (!(#<other> instanceof Array)) return false;
-    if (#<self>.length != #<other>.length) return false;  
+  def eql?(ary)
+    `if (!(#{ary} instanceof Array) || #{self}.length != #{ary}.length) return false`
 
-    //
-    // compare element-wise
-    //
-    for (var i = 0; i < #<self>.length; i++) 
-    {
-      if (! #<self>[i].#<m:eql?>(#<nil>, #<other>[i]))
-      {
-        // 
-        // at least for one element #eql? holds not true
-        //
-        return false;
-      }
-    }
-    
-    return true;
-    `
+    #
+    # Compare two equal-sized arrays element-wise
+    #
+    i = 0
+    while `#{i} < #{self}.length`
+      a = RubyJS::conv2ruby(`#{self}[#{i}]`)
+      b = RubyJS::conv2ruby(`#{ary}[#{i}]`)
+      return false unless a.eql?(b)
+      `#{i}++`
+    end
+    true
   end
 end
