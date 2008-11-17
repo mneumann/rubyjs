@@ -35,6 +35,7 @@ module RubyJS; class Compiler; class Node
         end
 
       else
+        get(:method_scope).add_method_call(@method_name)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
         #
         # TODO: encode method_name
@@ -129,6 +130,27 @@ module RubyJS; class Compiler; class Node
     end
 
     def brackets?; raise end
+  end
+
+  class Super
+    def as_javascript
+      get(:method_scope).add_super_call
+      raise
+    end
+  end
+
+  class ZSuper
+    def as_javascript
+      get(:method_scope).add_super_call
+      raise
+    end
+  end
+
+  class AttrAssign
+    def as_javascript
+      get(:method_scope).add_method_call(@method_name)
+      raise
+    end
   end
 
   class Return

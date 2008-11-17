@@ -19,6 +19,7 @@ require 'rubyjs/compiler/scope'
 require 'rubyjs/compiler/rewrites'
 require 'rubyjs/compiler/nodes/all'
 
+require 'rubyjs/javascript/scope'
 require 'rubyjs/javascript/nodes/all'
 require 'rubyjs/model'
 require 'rubyjs/eval_into'

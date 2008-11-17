@@ -53,7 +53,6 @@ module RubyJS; class Compiler; class Node
 
     def args(name)
       @name = name.to_s
-      get(:method_scope).add_ivar_lookup(@name)
     end
   end
 
@@ -65,7 +64,6 @@ module RubyJS; class Compiler; class Node
 
     def args(name, expr)
       @name, @expr = name.to_s, expr
-      get(:method_scope).add_ivar_assignment(@name)
     end
   end
   

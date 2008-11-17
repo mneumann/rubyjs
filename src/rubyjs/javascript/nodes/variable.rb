@@ -16,6 +16,7 @@ module RubyJS; class Compiler; class Node
 
   class IVar
     def as_javascript
+      get(:method_scope).add_ivar_lookup(@name)
       # TODO: use "self" in iterator
       "this." + get(:encoder).encode_instance_variable(@name)
     end
@@ -23,6 +24,7 @@ module RubyJS; class Compiler; class Node
 
   class IAsgn
     def as_javascript
+      get(:method_scope).add_ivar_assignment(@name)
       # TODO: use "self" in iterator
       "this." + get(:encoder).encode_instance_variable(@name) + " = " + @expr.javascript(:expression)
     end

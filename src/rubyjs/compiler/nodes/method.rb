@@ -16,11 +16,10 @@ module RubyJS; class Compiler; class Node
     def initialize(compiler)
       super(compiler)
       @scope = LocalScope.new(self)
-      @method_scope = MethodScope.new
     end
 
     def consume(sexp)
-      set(:scope => @scope, :method_scope => @method_scope) do
+      set(:scope => @scope) do
         super(sexp)
       end
     end
@@ -29,10 +28,8 @@ module RubyJS; class Compiler; class Node
       @method_name, @arguments, @body = method_name, arguments, body
     end
 
-    attr_reader :method_scope
     attr_accessor :method_name, :arguments, :body
   end
-
 
   #
   #
@@ -123,9 +120,6 @@ module RubyJS; class Compiler; class Node
 
     def args(receiver, method_name, arguments)
       @receiver, @method_name, @arguments = receiver, method_name.to_s, arguments
-
-      get(:method_scope).add_method_call(@method_name)
-
       if @receiver.nil?
         @private_call = true
         @receiver = Self.new_with_args(@compiler)
@@ -156,7 +150,6 @@ module RubyJS; class Compiler; class Node
 
     def args(arguments=nil)
       @arguments = arguments
-      get(:method_scope).add_super_call
     end
 
     attr_accessor :arguments
@@ -172,10 +165,6 @@ module RubyJS; class Compiler; class Node
   #
   class ZSuper < Node
     kind :zsuper
-
-    def args
-      get(:method_scope).add_super_call
-    end
   end
 
   #
@@ -196,7 +185,6 @@ module RubyJS; class Compiler; class Node
 
     def args(receiver, method_name, argument)
       @receiver, @method_name, @argument = receiver, method_name.to_s, argument
-      get(:method_scope).add_method_call(@method_name)
     end
 
     attr_accessor :receiver, :method_name, :argument
