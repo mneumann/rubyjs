@@ -134,9 +134,9 @@ module RubyJS
   #
   class WorldModel
 
-    def initialize
+    def initialize(namespace=::RubyJS::Environment)
+      @namespace = namespace
       @entity_model_map = {}
-      register_all_entities!
     end
 
     def entity_models_sorted
@@ -239,7 +239,7 @@ module RubyJS
     end 
 
     def namespace
-      ::RubyJS::Environment
+      @namespace
     end 
 
     def namespace_scope_r
