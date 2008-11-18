@@ -72,6 +72,8 @@ module RubyJS; class Compiler; class Node
             NumberLiteral.new_with_args(@compiler, value.begin),
             NumberLiteral.new_with_args(@compiler, value.end),
             value.exclude_end?)
+      when Symbol
+        SymbolLiteral.new_with_args(@compiler, value)
       else
         @value = value
         self
@@ -79,6 +81,12 @@ module RubyJS; class Compiler; class Node
     end
 
     attr_accessor :value
+  end
+
+  class SymbolLiteral < Node
+    def args(value)
+      @value = value
+    end
   end
 
   class NumberLiteral < Node

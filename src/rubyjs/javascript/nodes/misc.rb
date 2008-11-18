@@ -37,6 +37,12 @@ module RubyJS; class Compiler; class Node
     def brackets?; true end
   end
 
+  class SymbolLiteral
+    def as_javascript
+      @value.to_s
+    end
+  end
+
   class ArrayLiteral
     def as_javascript
       "[" + @elements.map {|elem| elem.javascript(:expression)}.join(", ") + "]"
