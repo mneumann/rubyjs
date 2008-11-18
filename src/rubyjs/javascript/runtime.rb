@@ -1,23 +1,152 @@
+#
+# Runtime support for RubyJS.
+#
+# The runtime consists of functions that cannot depend on support of 
+# the RubyJS core libraries.
+#
+# The following code is generated:
+#
+#   function RubyJS() {
+#     <%= INIT %> 
+#     <% for each function of module Runtime %>
+#       <%= code of that function %> 
+#     <% end %>
+#     SETUP() # invocation of runtime function SETUP
+#   }
+#
 module Runtime
+
   INIT = <<-INIT
     var nil;
   INIT
 
-  def SETUP() `
-    #{RubyJS.runtime :NilClass}.prototype.toString = function() { return "nil" };
-    #{RubyJS.runtime :MetaClass}.#{RubyJS.method :name}  = function() { return "MetaClass" }; 
-    #{RubyJS.runtime :MetaClass}.#{RubyJS.method :class} = function() { return this }; 
-
-    #{nil} = new #{RubyJS.runtime :NilClass}();`
+  #
+  # This function is initially called to setup the runtime.
+  #
+  def SETUP
+    `#{RubyJS.runtime :NilClass}.prototype.toString = function() { return "nil" }`
+    `#{RubyJS.runtime :MetaClass}.#{RubyJS.method :name}  = function() { return "MetaClass" }`
+    `#{RubyJS.runtime :MetaClass}.#{RubyJS.method :class} = function() { return this }`
+    `#{nil} = new #{RubyJS.runtime :NilClass}()`
     ``
   end
 
+  #
+  # The class of +nil+
+  #
   def NilClass
     ``
   end
 
   #
-  # A null-function (used by HTTPRequest)
+  # MetaClass, the class of +Class+
+  #
+  # There is only one instance of class MetaClass, and this instance is
+  # created when class +Class+ is created.
+  #
+  def MetaClass
+    `#{self}.#{RubyJS.attr :class} = #{RubyJS.runtime :MetaClass}`
+    `#{self}.#{RubyJS.attr :superclass} = #{nil}`
+    `#{self}.#{RubyJS.attr :classname} = "Class"`
+    `#{self}.#{RubyJS.attr :object_constructor} = #{RubyJS.runtime :MetaClass}`
+    self
+  end
+
+  def add_instance_methods(klass, methods)
+    key = nil
+   `for (#{key} in #{methods}) #{klass}.#{RubyJS.attr :object_constructor}.prototype[#{key}] = #{methods}[#{key}]`
+   ``
+  end
+
+  def add_class_methods(klass, methods)
+    key = nil
+   `for (#{key} in #{methods}) #{klass}[#{key}] = #{methods}[#{key}]`
+   `` 
+  end
+
+  def include_modules(klass, modules)
+   `#{klass}.#{RubyJS.attr :modules} = ((#{klass}.#{RubyJS.attr :modules})||[]).concat(#{modules})`
+   `` 
+  end
+
+  #
+  # Update instance and class method table (Javascript: prototype) of +klass+.
+  #
+  # Ruby's method lookup order is as follows:
+  #
+  #   1. methods of class
+  #   2. methods of included modules 
+  #   3. methods of superclass
+  #
+  # To guarantee this method lookup order, we overwrite the prototype
+  # with methods in reverse lookup order (unless an entry already
+  # exists):
+  #
+  #   1. methods of superclass
+  #   2. methods of included modules
+  #
+  def update_class(klass)
+    key = nil 
+
+    #
+    # The object_constructor prototype of +klass+
+    #
+    klass_ocp = `#{klass}.#{RubyJS.attr :object_constructor}.prototype`
+
+    #
+    # The superclass of +klass+
+    #
+    sclass  = `#{klass}.#{RubyJS.attr :superclass}`
+
+    #
+    # Contains all the entities whose object_constructor prototypes are
+    # used to "extend" the object_constructor prototype of +klass+.
+    #
+    extend_with = [] 
+
+    #
+    # Add first the included modules (in reverse order)
+    #
+   `#{extend_with} += (#{klass}.#{RubyJS.attr :modules} || []).concat().reverse()`
+
+    #
+    # Next, add the superclass
+    #
+   `#{extend_with}.push(#{sclass} != #{nil} ? #{sclass} : {})`
+
+    #
+    # Then, do the assignment
+    #
+    ocp = nil
+   `for (#{i=0}; #{i} < #{extend_with}.length; ++#{i})
+    {
+      #{ocp} = #{extend_with}[#{i}].#{RubyJS.attr :object_constructor}.prototype; 
+      for (#{key} in #{ocp})
+      {
+        #{klass_ocp}[#{key}] = #{klass_ocp}[#{key}] || #{ocp}[#{key}];
+      }
+    }`
+
+    #
+    # Furthermore, we inherit class methods from the superclass 
+    #
+    if sclass
+     `for (#{key} in #{sclass})
+      {
+        #{klass}[#{key}] = #{klass}[#{key}] || #{sclass}[#{key}];
+      }`
+    end
+
+    #
+    # And set class for instanciated objects
+    #
+   `#{klass_ocp}.#{RubyJS.attr :class} = #{klass}`
+
+   ``
+  end
+
+  #
+  # A null-function
   #
   def fn_null
     ``
@@ -72,15 +201,13 @@ module Runtime
     `#{cond} === #{false} || #{cond} === #{nil}`
   end
 
+  #
+  # Represents a +break+ from an iterator ("non-local goto").
+  #
   def IterJump(return_value, scope)
    `#{self}.#{RubyJS.attr :return_value} = #{return_value}` 
    `#{self}.#{RubyJS.attr :scope} = #{scope}` 
     self
-  end
-
-  # TODO
-  def to_splat(a)
-    a
   end
 
   #
@@ -124,6 +251,7 @@ module Runtime
   #
   # Whether object.kind_of?(klass)
   #
+=begin
   def kind_of(object, klass)
     k = `#{object}.#{RubyJS.attr :class}`
    `while (#{k} != #{nil}) {`
@@ -140,107 +268,6 @@ module Runtime
    `}`
     return false
   end
-
-  def rebuild_classes(classes)
-    i = 0
-   `for (; #{i} < #{classes}.length; ++#{i})
-      #{RubyJS.runtime :rebuild_class}(#{classes}[#{i}])` 
-   ``
-  end
-
-  def define_class(definition) 
-    klass = nil
-    key = nil
-
-   `#{klass} = #{definition}.#{RubyJS.attr :class} || #{
-      Class.new(`#{definition}.#{RubyJS.attr :superclass}`, 
-                `#{definition}.#{RubyJS.attr :classname}`, 
-                `#{definition}.#{RubyJS.attr :object_constructor}`) };
-
-    for (#{key} in #{definition}.#{RubyJS.attr :instance_methods} || {})
-    {
-      #{klass}.#{RubyJS.attr :object_constructor}.prototype[#{key}] = #{definition}.#{RubyJS.attr :instance_methods}[#{key}];
-    }
-
-    for (#{key} in #{definition}.#{RubyJS.attr :methods} || {})
-    {
-      #{klass}[#{key}] = #{definition}.#{RubyJS.attr :methods}[#{key}];
-    }
-    
-    for (#{key} = 0; #{key} < (#{definition}.#{RubyJS.attr :modules} || []).length; ++#{key})
-    {
-      #{klass}.#{RubyJS.attr :modules}.push(#{definition}.#{RubyJS.attr :modules}[#{key}]);
-    }`
-
-    return klass
-  end
-
-  #
-  # MetaClass describes a Class object.
-  #
-  def MetaClass(_class, superclass, classname, object_constructor) 
-    `#{self}.#{RubyJS.attr :class}              = #{_class}` 
-    `#{self}.#{RubyJS.attr :superclass}         = #{superclass}` 
-    `#{self}.#{RubyJS.attr :classname}          = #{classname}` 
-    `#{self}.#{RubyJS.attr :object_constructor} = #{object_constructor}` 
-    `#{self}.#{RubyJS.attr :modules}            = []` 
-    self
-  end
-
-
-
-=begin
-
-function #<globalattr:rebuild_class>(c)
-{
-  var k,i;
-
-  //
-  // include modules
-  //
-  // do that before, because when assigning instance methods of 
-  // the super class, a check for === undefined prevents this method 
-  // from being overwritten.
-  //
-  for (i=0; i<c.#<attr:modules>.length; i++)
-  {
-    for (k in c.#<attr:modules>[i].#<attr:object_constructor>.prototype)
-    {
-      if (c.#<attr:object_constructor>.prototype[k]===undefined)
-      {
-        c.#<attr:object_constructor>.prototype[k] = c.#<attr:modules>[i].#<attr:object_constructor>.prototype[k];
-      }
-    }
-  }
-
-  // instance methods
-  if (c.#<attr:superclass> != #<nil>)
-  {
-    for (k in c.#<attr:superclass>.#<attr:object_constructor>.prototype)
-    {
-      if (c.#<attr:object_constructor>.prototype[k]===undefined)
-      {
-        c.#<attr:object_constructor>.prototype[k] = c.#<attr:superclass>.#<attr:object_constructor>.prototype[k];
-      }
-    }
-  }
-
-  // inherit class methods from superclass
-  if (c.#<attr:superclass> != #<nil>)
-  {
-    for (k in c.#<attr:superclass>)
-    {
-      if (c[k]===undefined)
-      {
-        c[k] = c.#<attr:superclass>[k];
-      }
-    }
-  }
-
-  // set class for instanciated objects
-  c.#<attr:object_constructor>.prototype.#<attr:_class> = c;
-}
-
-
 =end
-end
+
+end # module Runtime
