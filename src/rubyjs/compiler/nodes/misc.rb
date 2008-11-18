@@ -87,6 +87,8 @@ module RubyJS; class Compiler; class Node
     def args(value)
       @value = value
     end
+
+    attr_accessor :value
   end
 
   class NumberLiteral < Node

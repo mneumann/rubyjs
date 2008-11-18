@@ -34,7 +34,7 @@ module RubyJS; class Compiler; class Node
     end
 
     def plugin_attr(arg)
-      raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
+      raise ArgumentError unless arg.is?(SymbolLiteral)
       get(:encoder).encode_attr(arg.value.to_s)
     end
 
@@ -44,12 +44,12 @@ module RubyJS; class Compiler; class Node
     end
 
     def plugin_runtime(arg)
-      raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
+      raise ArgumentError unless arg.is?(SymbolLiteral)
       get(:encoder).encode_runtime(arg.value.to_s)
     end
 
     def plugin_method(arg)
-      raise ArgumentError unless arg.is?(Literal) and arg.value.kind_of?(Symbol)
+      raise ArgumentError unless arg.is?(SymbolLiteral)
       get(:encoder).encode_method(arg.value.to_s)
     end
 
