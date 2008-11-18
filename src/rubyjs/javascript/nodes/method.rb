@@ -155,6 +155,13 @@ module RubyJS; class Compiler; class Node
     end
   end
 
+  class BlockPass
+    # TODO
+    def as_javascript
+      'TODO'
+    end
+  end
+
   class Return
     #
     # We don't want "return" to be generate within Node#javascript.
