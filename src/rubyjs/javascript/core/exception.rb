@@ -1,6 +1,10 @@
 class Exception
   attr_reader :message
 
+  def to_s
+    @message
+  end
+
   def initialize(message=nil)
     if message.nil?
       @message = self.class.name
@@ -8,7 +12,6 @@ class Exception
       @message = message
     end
   end
-  alias to_s message
 
   def inspect
     "#<#{self.class.name}: #{@message}>"
