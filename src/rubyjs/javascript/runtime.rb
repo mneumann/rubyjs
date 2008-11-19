@@ -9,7 +9,6 @@ module RubyJS
   # The following code is generated:
   #
   #   function RubyJS() {
-  #     <%= INIT %> 
   #     <% for each function of module Runtime %>
   #       <%= code of that function %> 
   #     <% end %>
@@ -17,10 +16,6 @@ module RubyJS
   #   }
   #
   module Runtime
-
-    INIT = <<-INIT
-      var nil;
-    INIT
 
     #
     # This function is initially called to setup the runtime.

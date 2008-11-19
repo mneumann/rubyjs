@@ -21,5 +21,9 @@ require 'rubyjs/compiler/nodes/all'
 
 require 'rubyjs/javascript/scope'
 require 'rubyjs/javascript/nodes/all'
+require 'rubyjs/javascript/naming'
+require 'rubyjs/javascript/runtime'
+require 'rubyjs/javascript/code_generator'
+
 require 'rubyjs/model'
 require 'rubyjs/eval_into'
