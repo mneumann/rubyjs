@@ -58,7 +58,28 @@ module RubyJS
       }
     end
 
+    include Comparable
+
+    def <=>(other)
+      return -1 if prefix_of(self.name_pieces, other.name_pieces)
+      return 1 if prefix_of(other.name_pieces, self.name_pieces)
+      return 0
+    end
+
     protected
+
+    #
+    # true if arr1 is prefix of arr2, otherwise false
+    #
+    #   prefix_of([1,2,3], [1,2]) # => false
+    #   prefix_of([1,2], [1,2,3]) # => true
+    #   prefix_of([1,2], [1,2])   # => false (!!!)
+    #
+    def prefix_of(arr1, arr2)
+      return false if arr1 == arr2
+      return false if arr1.size > arr2.size
+      arr2[0,arr1.size] == arr1
+    end
 
     def namify(entity)
       name = entity.name
@@ -69,7 +90,8 @@ module RubyJS
       end
       return name
     end
-  end
+
+  end # class EntityModel
 
   #
   # Class ClassModel represents a Ruby class.
@@ -86,31 +108,40 @@ module RubyJS
       #
 
       a = entity.ancestors
-      a = a[0...(a.index(::Object))]
+      raise unless a.first == entity
+      a = a[1...(a.index(::Object))]
 
-      s = entity.superclass
-      s = nil if s == ::Object
+      #
+      # "correct" the ancestor chain
+      #
+      a << @world.root_object if entity != @world.root_object
 
-      # remove entity from the ancestor chain
-      a = a[1..-1] if a[0] == entity
-
-      # superclasses
+      #
+      # determine superclasses
+      #
       @sclasses = a.select {|e| e.is_a?(::Class)}.map {|e| @world.lookup(e) }
+      @sclass = @sclasses.first
 
-      # a now contains the included modules
-      a = a[0...(a.index(s))] if s
-
-      if entity == @world.root_object
-        raise unless s.nil?
-        s = nil
-      else
-        s = @world.root_object if s.nil?
-      end
-
-      @sclass = @world.lookup(s)
-      @modules = a.map {|e| @world.lookup(e)}
+      #
+      # Determine included modules
+      #
+      @modules = (@sclass ? a[0...(a.index(@sclass.of))] : a).map {|e| @world.lookup(e) }
     end
-  end
+
+    def <=>(other)
+      # modules go before classes
+      return 1 if other.is_a?(ModuleModel)
+
+      # other is a superclass of self
+      return 1 if self.sclasses.include?(other)
+
+      # self is a superclass of other
+      return -1 if other.sclasses.include?(self)
+
+      super(other)
+    end
+
+  end # ClassModel
 
   #
   # Class ModuleModel represents a Ruby module.
@@ -121,13 +152,25 @@ module RubyJS
       super(entity, world)
 
       a = entity.ancestors
-
-      # remove entity from the ancestor chain
-      a = a[1..-1] if a[0] == entity
+      raise unless a.shift == entity
 
       @modules = a.map {|e| @world.lookup(e)}
     end
-  end
+
+    def <=>(other)
+      # classes go after modules
+      return -1 if other.is_a?(ClassModel)
+
+      # other is included in self 
+      return 1 if self.modules.include?(other)
+
+      # self is included in other
+      return -1 if other.modules.include?(self)
+
+      super(other)
+    end
+
+  end # ModuleModel
 
   #
   # Class WorldModel represents ... 
@@ -140,7 +183,7 @@ module RubyJS
     end
 
     def entity_models_sorted
-      sort_entity_models(@entity_model_map.values)
+      @entity_model_map.values.sort {|a,b| a <=> b}
     end
 
     def register_all_entities!
@@ -157,59 +200,6 @@ module RubyJS
     end
 
     protected
-
-    def sort_entity_models(arr)
-      arr.sort {|e1, e2|
-        if e1.is_a?(ModuleModel) and e2.is_a?(ClassModel)
-          # modules go before classes
-          -1
-        elsif e1.is_a?(ClassModel) and e2.is_a?(ModuleModel) 
-          # classes go after modules
-          1
-        elsif e1.is_a?(ModuleModel) and e2.is_a?(ModuleModel)
-          if e1.modules.include?(e2)
-            1
-          elsif e2.modules.include?(e1)
-            -1
-          else
-            if prefix_of(e1.name_pieces, e2.name_pieces)
-              -1
-            elsif prefix_of(e2.name_pieces, e1.name_pieces)
-              1
-            else
-              0
-            end
-          end
-        elsif e1.is_a?(ClassModel) and e2.is_a?(ClassModel)
-          if e1.sclasses.include?(e2)
-            1
-          elsif e2.sclasses.include?(e1)
-            -1
-          else
-            if prefix_of(e1.name_pieces, e2.name_pieces)
-              -1
-            elsif prefix_of(e2.name_pieces, e1.name_pieces)
-              1
-            else
-              0
-            end
-          end
-        else
-         raise
-        end 
-      }
-    end
-
-    #
-    # true if arr1 is prefix of arr2, otherwise false
-    #
-    #   prefix_of([1,2,3], [1,2]) # => false
-    #   prefix_of([1,2], [1,2,3]) # => true
-    #
-    def prefix_of(arr1, arr2)
-      return false if arr1.size > arr2.size
-      arr2[0,arr1.size] == arr1
-    end
 
     def all_entities
       seen = Set.new
@@ -245,6 +235,7 @@ module RubyJS
     def namespace_scope_r
       /^#{namespace()}::(.*)$/
     end
-  end
+
+  end # WorldModel
 
 end # module RubyJS
