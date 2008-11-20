@@ -66,10 +66,10 @@ module RubyJS
     end
   end
 
-  def self.eval_into(module_scope, load_path=nil, platform=nil, &block)
+  def self.eval_into(module_scope=nil, load_path=nil, platform=nil, &block)
     ::RubyJS::EvalInfo.load_path = load_path
     ::RubyJS::EvalInfo.platform = platform
-    ::RubyJS::EvalInfo.module_scope = module_scope
+    ::RubyJS::EvalInfo.module_scope = module_scope || ::RubyJS::Environment 
     ::RubyJS::EvalInfo.loaded ||= [] # avoids recursive loads
 
     ::RubyJS::EvalInfo.eval_proc = proc {|str|
