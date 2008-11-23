@@ -1,29 +1,25 @@
 module Enumerable
   def map(&block)
-    result = []
-    each {|elem| result << (block ? block.call(elem) : elem) }
-    result
+    if block
+      result = []
+      each {|elem| result << yield elem }
+      result
+    else
+      to_a
+    end
   end
   alias collect map
 
   def select
     result = []
-    each {|elem|
-      if yield(elem)
-        result << elem 
-      end
-    }
+    each {|elem| result << elem if yield elem }
     result
   end
   alias find_all select
 
   def reject
     result = []
-    each {|elem|
-      unless yield(elem)
-        result << elem
-      end
-    }
+    each {|elem| result << elem unless yield elem }
     result
   end
 
