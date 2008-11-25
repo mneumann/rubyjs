@@ -1,12 +1,12 @@
 module Enumerable
   def map(&block)
+    result = []
     if block
-      result = []
       each {|elem| result << yield elem }
-      result
     else
-      to_a
+      each {|elem| result << elem }
     end
+    result
   end
   alias collect map
 
