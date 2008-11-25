@@ -10,20 +10,18 @@ module RubyJS
       @vars = Set.new
     end
 
-    def generate_method(meth)
+    def generate_method(meth, out="")
       h = {
         :encoder => @encoder,
         :local_encoder => RubyJS::JavascriptNaming::LocalNameEncoder.new,
         :method_scope => RubyJS::Compiler::MethodScope.new 
       }
-      out = ""
       meth.node.set(h) { out << meth.node.javascript }
       return out
     end
 
-    def generate_runtime
+    def generate_runtime(out="")
       @vars << @encoder.encode_nil
-      out = ""
 
       runtime = RubyJS::EntityModel.of(RubyJS::Runtime, RubyJS::WorldModel.new(RubyJS))
       runtime.imethods.values.sort_by{|m| m.name}.each do |meth|
@@ -39,10 +37,9 @@ module RubyJS
       return out
     end
 
-    def generate_model(world, model)
+    def generate_model(world, model, out="")
       c = @encoder.encode_constant(model.name)
       @vars << c
-      out = ""
 
       #
       # create new class, e.g.
@@ -99,7 +96,7 @@ module RubyJS
       return out
     end
 
-    def generate_world
+    def generate_world(out="")
       world = RubyJS::WorldModel.new
       world.register_all_entities!
 
@@ -112,19 +109,17 @@ module RubyJS
         }
       end 
 
-      out = ""
       world.entity_models_sorted.each {|model|
         out << generate_model(world, model)
       }
       return out
     end
 
-    def generate(js_namespace="RubyJS")
+    def generate(js_namespace="RubyJS", out="")
       str = ""
       str << generate_runtime()
       str << generate_world()
 
-      out = ""
       out << "function #{js_namespace}() {\n"
       out << "var " + @vars.to_a.join(",") + ";\n"
       out << str
