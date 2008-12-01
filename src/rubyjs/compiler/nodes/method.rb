@@ -87,30 +87,11 @@ module RubyJS; class Compiler; class Node
     attr_accessor :argument_name
   end
 
-  #
-  # Is produced by:
-  #
-  #   a = proc { ... }
-  #
-  #   [1,2,3].each(&a)
-  #
-  # In this example, +block+ is [:lvar, :a].
-  #
-  class BlockPass < Node
-    kind :block_pass
-
-    def args(block)
-      @block = block
-    end
-  end
 
   #----------------------------------------------
   # Method calls
   #----------------------------------------------
 
-  class ArgList < ArrayLiteral
-    kind :arglist
-  end
 
   class MethodCall < Node
     kind :call
@@ -124,7 +105,33 @@ module RubyJS; class Compiler; class Node
     end
 
     attr_accessor :iter
-  end
+
+    #
+    # The arguments used in a method call.
+    #
+    class ArgumentList < ArrayLiteral
+      kind :arglist
+    end
+
+    #
+    # Is produced by:
+    #
+    #   a = proc { ... }
+    #
+    #   [1,2,3].each(&a)
+    #
+    # In this example, +block+ is [:lvar, :a].
+    #
+    class BlockPass < Node
+      kind :block_pass
+
+      def args(block)
+        @block = block
+      end
+    end
+
+  end # class MethodCall
+
 
   class Return < Node
     kind :return

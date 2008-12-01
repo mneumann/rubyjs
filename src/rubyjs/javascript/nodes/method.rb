@@ -1,21 +1,29 @@
 module RubyJS; class Compiler; class Node
 
-  class ArgList
-    def as_javascript
-      raise if get(:mode) != :expression
-      @elements.map {|e| e.javascript }.join(", ")
+  class MethodCall
+
+    class ArgumentList
+      def as_javascript
+        raise if get(:mode) != :expression
+        @elements.map {|e| e.javascript }.join(", ")
+      end
+
+      def brackets?; raise end
     end
 
-    def brackets?; raise end
-  end
+    class BlockPass
+      # TODO
+      def as_javascript
+        'TODO'
+      end
+    end
 
-  class MethodCall
     def as_javascript
       if @receiver.is?(Const) and @receiver.name == 'RubyJS'
         #
         # Treat a special case.
         #
-        raise unless @arguments.is?(ArgList)
+        raise unless @arguments.is?(ArgumentList)
         if self.respond_to?("plugin_#{@method_name}")
           self.send("plugin_#{@method_name}", *@arguments.elements)
         else
@@ -152,13 +160,6 @@ module RubyJS; class Compiler; class Node
     def as_javascript
       get(:method_scope).add_method_call(@method_name)
       raise
-    end
-  end
-
-  class BlockPass
-    # TODO
-    def as_javascript
-      'TODO'
     end
   end
 
