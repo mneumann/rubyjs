@@ -97,7 +97,7 @@ module RubyJS; class Compiler; class Node
 
     def variable_declaration
       arr = (@scope.nearest_local_scope.variables.values - @arguments.variables).map {|var|
-        get(:local_encoder).encode_local_variable(var.name)
+        encode_local_variable(var)
       } 
       arr += (@scope.nearest_local_scope.temporary_variables.values).map {|var|
         get(:local_encoder).encode_temporary_variable(var.name)
@@ -115,9 +115,9 @@ module RubyJS; class Compiler; class Node
 
   class MethodArguments
     def javascript_arglist
-      args = @arguments.map {|var| get(:local_encoder).encode_local_variable(var.name) }
+      args = @arguments.map {|var| encode_local_variable(var) }
       if @block and not @catch_all
-        args += ["_", get(:local_encoder).encode_local_variable(@block.name)]
+        args += ["_", encode_local_variable(@block)]
       end
       args.join(", ")
     end

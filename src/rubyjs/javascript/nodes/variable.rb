@@ -2,13 +2,13 @@ module RubyJS; class Compiler; class Node
 
   class LVar
     def as_javascript
-      get(:local_encoder).encode_local_variable(@variable.name)
+      encode_local_variable(@variable)
     end
   end
 
   class LAsgn
     def as_javascript
-      get(:local_encoder).encode_local_variable(@variable.name) + " = " + @expr.javascript(:expression)
+      encode_local_variable(@variable) + " = " + @expr.javascript(:expression)
     end
 
     def brackets?; true end

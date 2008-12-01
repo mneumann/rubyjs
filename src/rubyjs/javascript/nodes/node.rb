@@ -80,6 +80,10 @@ module RubyJS; class Compiler
       end
     end
 
+    def encode_local_variable(variable)
+      get(:local_encoder).encode_local_variable(variable.name)
+    end
+
   end # class Node
 
 end; end # class Compiler; module RubyJS
