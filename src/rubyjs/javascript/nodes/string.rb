@@ -16,7 +16,7 @@ module RubyJS; class Compiler; class Node
         map {|piece| 
           str = piece.javascript(:expression)
           if piece.is?(EvalString)
-            "(#{str}).to_s()"
+            (piece.brackets? ? "(%s).%s()" : "%s.%s()") % [str, get(:encoder).encode_method("to_s")]
           else
             str
           end
@@ -103,6 +103,10 @@ module RubyJS; class Compiler; class Node
   # (DynamicString, DynamicBacktickString).
   #
   class EvalString
+    def brackets?
+      @expr.brackets?
+    end
+
     def as_javascript
       @expr.javascript(:expression)
     end
