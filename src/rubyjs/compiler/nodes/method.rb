@@ -52,12 +52,12 @@ module RubyJS; class Compiler; class Node
         case arg[0,1]
         when '*'
           raise if @catch_all
-          @catch_all = get(:scope).find_variable(arg[1..-1], true)
+          @catch_all = @scope.nearest_local_scope.find_variable(arg[1..-1], true)
         when '&'
           raise if @block
-          @block = get(:scope).find_variable(arg[1..-1], true)
+          @block = @scope.nearest_local_scope.find_variable(arg[1..-1], true)
         else
-          @arguments << get(:scope).find_variable(arg, true)
+          @arguments << @scope.nearest_local_scope.find_variable(arg, true)
         end
       }
     end

@@ -4,7 +4,7 @@ module RubyJS; class Compiler; class Node
   
   class Loop < Node
     def consume(sexp)
-      set(:iterator_scope => self) do
+      set(:scope => IteratorScope.new(self, @scope)) do
         super(sexp)
       end
     end
@@ -24,7 +24,6 @@ module RubyJS; class Compiler; class Node
 
   class IteratorControl < Node
     def args(argument=nil)
-      @iterator_scope = get(:iterator_scope) || raise("#{kind()} allowed only in loop or iterator") 
       @argument = argument
     end
   end
@@ -50,7 +49,7 @@ module RubyJS; class Compiler; class Node
 
     def initialize(compiler)
       super(compiler)
-      @scope = LocalScope.new(self, @scope, :iter)
+      @scope = LocalScope.new(self, IteratorScope.new(self, @scope))
     end
 
     def consume(sexp)
@@ -60,7 +59,7 @@ module RubyJS; class Compiler; class Node
       raise if res.size != 1
       res.first.iter = self 
 
-      set(:iterator_scope => self, :scope => @scope) { res.push(*super(rest)) }
+      set(:scope => @scope) { res.push(*super(rest)) }
       return res
     end
 

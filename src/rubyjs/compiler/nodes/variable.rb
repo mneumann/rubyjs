@@ -7,7 +7,7 @@ module RubyJS; class Compiler; class Node
     kind :lasgn
 
     def args(name, expr=nil)
-      @variable = get(:scope).find_variable(name, true) || raise("Undefined variable #{name}")
+      @variable = @scope.nearest_local_scope.find_variable(name, true) || raise("Undefined variable #{name}")
       @expr = expr
     end
   end
@@ -19,7 +19,7 @@ module RubyJS; class Compiler; class Node
     kind :lvar
 
     def args(name)
-      @variable = get(:scope).find_variable(name) || raise("Undefined variable #{name}")
+      @variable = @scope.nearest_local_scope.find_variable(name) || raise("Undefined variable #{name}")
     end
   end
 

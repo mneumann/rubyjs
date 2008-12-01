@@ -59,7 +59,7 @@ module RubyJS; class Compiler; class Node
     # over and over again.
     #
     def plugin_conv2ruby(arg)
-      @scope.with_temporary_variable {|temp_var|
+      @scope.nearest_local_scope.with_temporary_variable {|temp_var|
         tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
         js = arg.javascript(:expression)
         "(#{tmp}=(#{js}),#{tmp}==null ? #{get(:encoder).encode_nil} : #{tmp})" 
@@ -96,10 +96,10 @@ module RubyJS; class Compiler; class Node
     end
 
     def variable_declaration
-      arr = (@scope.variables.values - @arguments.variables).map {|var|
+      arr = (@scope.nearest_local_scope.variables.values - @arguments.variables).map {|var|
         get(:local_encoder).encode_local_variable(var.name)
       } 
-      arr += (@scope.temporary_variables.values).map {|var|
+      arr += (@scope.nearest_local_scope.temporary_variables.values).map {|var|
         get(:local_encoder).encode_temporary_variable(var.name)
       }
 
