@@ -27,9 +27,8 @@ module RubyJS; class Compiler; class Node
         if self.respond_to?("plugin_#{@method_name}")
           self.send("plugin_#{@method_name}", *@arguments.elements)
         else
-          raise
+          raise "plugin #{@method_name} not found"
         end
-
       else
         get(:method_scope).add_method_call(@method_name)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
