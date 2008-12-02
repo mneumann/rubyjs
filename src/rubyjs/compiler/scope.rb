@@ -15,6 +15,10 @@ module RubyJS; class Compiler
     def track_write
       @writes += 1
     end
+
+    def used?
+      @reads > 0 or @writes > 0
+    end
   end
 
   class TemporaryVariable < LocalVariable; end
