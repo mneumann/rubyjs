@@ -1,10 +1,19 @@
 module RubyJS; class Compiler
 
   class LocalVariable
-    attr_reader :name, :scope
+    attr_reader :name, :scope, :reads, :writes
 
     def initialize(name, scope)
       @name, @scope = name, scope
+      @reads, @writes = 0, 0
+    end
+
+    def track_read
+      @reads += 1
+    end
+
+    def track_write
+      @writes += 1
     end
   end
 
