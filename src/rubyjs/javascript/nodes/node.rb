@@ -66,7 +66,7 @@ module RubyJS; class Compiler
       else
         @scope.nearest_local_scope.with_temporary_variable {|temp_var|
           str = cond.javascript(:expression)
-          tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+          tmp = get(:encoder).encode_temporary_variable(temp_var.name)
           "(#{tmp}=(#{str}),#{cond_is(tmp, !negate)})"
         }
       end
@@ -81,7 +81,7 @@ module RubyJS; class Compiler
     end
 
     def encode_local_variable(variable)
-      get(:local_encoder).encode_local_variable(variable.name)
+      get(:encoder).encode_local_variable(variable.name)
     end
 
   end # class Node

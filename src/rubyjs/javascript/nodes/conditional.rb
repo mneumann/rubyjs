@@ -16,7 +16,7 @@ module RubyJS; class Compiler; class Node
   class And
     def as_javascript
       @scope.nearest_local_scope.with_temporary_variable {|temp_var|
-        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        tmp = get(:encoder).encode_temporary_variable(temp_var.name)
         left = @left.javascript(:expression)
         right = @right.javascript(:expression)
         "(#{tmp}=(#{left}),(#{cond_is(tmp, true)})?(#{right}):#{tmp})"
@@ -40,7 +40,7 @@ module RubyJS; class Compiler; class Node
   class Or
     def as_javascript
       @scope.nearest_local_scope.with_temporary_variable {|temp_var|
-        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        tmp = get(:encoder).encode_temporary_variable(temp_var.name)
         left = @left.javascript(:expression)
         right = @right.javascript(:expression)
         "(#{tmp}=(#{left}),(#{cond_is(tmp, true)})?(#{tmp}):#{right})"
@@ -51,7 +51,7 @@ module RubyJS; class Compiler; class Node
   class Not
     def as_javascript
       @scope.nearest_local_scope.with_temporary_variable {|temp_var|
-        tmp = get(:local_encoder).encode_temporary_variable(temp_var.name)
+        tmp = get(:encoder).encode_temporary_variable(temp_var.name)
         child = @child.javascript(:expression)
         "(#{tmp}=(#{child}),#{cond_is(tmp, false)})"
       }

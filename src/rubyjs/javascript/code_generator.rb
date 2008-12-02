@@ -14,7 +14,6 @@ module RubyJS
       @encoder.reset_local_cache!
       h = {
         :encoder => @encoder,
-        :local_encoder => @encoder,
         :method_scope => RubyJS::Compiler::MethodScope.new 
       }
       meth.node.set(h) { out << meth.node.javascript }
