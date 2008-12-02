@@ -15,8 +15,9 @@ def with_encoder(file='encoder.yml')
     if File.exist?(file)
       YAML.load(File.read(file))
     else
-      RubyJS::JavascriptNaming::GlobalNameEncoder.new
+      RubyJS::JavascriptNaming::NameEncoder.new
     end
+  encoder.reset_local_cache!
   begin
     yield encoder
   ensure
