@@ -46,10 +46,12 @@ module RubyJS; class Compiler; class Node
 
   class Iter
     def as_javascript
-      "function() {" +
-      @body.javascript(:last) +
-      "}"
+      set(:self => get(:alternate_self))  do
+        "function() {" + @body.javascript(:last) + "}"
+      end
     end
+
+    def brackets?; true end
   end
 
 end; end; end # class Node; class Compiler; module RubyJS

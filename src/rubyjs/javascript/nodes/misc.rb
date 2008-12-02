@@ -49,12 +49,9 @@ module RubyJS; class Compiler; class Node
     end
   end
 
-  #
-  # TODO: Need to replace +this+ with "self" when inside an iterator.
-  #
   class Self
     def as_javascript
-      "this"
+      encode_self()
     end
   end
 

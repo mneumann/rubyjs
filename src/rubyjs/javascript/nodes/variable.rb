@@ -17,16 +17,14 @@ module RubyJS; class Compiler; class Node
   class IVar
     def as_javascript
       get(:method_scope).add_ivar_lookup(@variable.name)
-      # TODO: use "self" in iterator
-      "this." + encode(@variable)
+      encode_self() + "." + encode(@variable)
     end
   end
 
   class IAsgn
     def as_javascript
       get(:method_scope).add_ivar_assignment(@variable.name)
-      # TODO: use "self" in iterator
-      "this." + encode(@variable) + " = " + @expr.javascript(:expression)
+      encode_self() + "." + encode(@variable) + " = " + @expr.javascript(:expression)
     end
 
     def brackets?; true end

@@ -86,28 +86,40 @@ module RubyJS; class Compiler; class Node
     def as_javascript
       raise if get(:mode) == :expression
 
-      args = @arguments.javascript_arglist
-      opt = @arguments.javascript_optional
+      args, opt, body = nil, nil, nil
 
-      #
-      # We have to generate the body before generating
-      # the variable declarations, as within the body temporary
-      # variables might be allocated.
-      #
-      body = @body.javascript(:last)
+      self_variable = SelfVariable.new
+      @scope.nearest_local_scope.with_temporary_variable do |alternate_self_variable|
+        set(:self => self_variable, :alternate_self => alternate_self_variable) do
+          args = @arguments.javascript_arglist
+          opt = @arguments.javascript_optional
 
-      "function(#{args}){\n" +
-        variable_declaration() + 
-        (opt ? opt + ";" : "") + body + "}"
+          #
+          # We have to generate the body before generating
+          # the variable declarations, as within the body temporary
+          # variables might be allocated.
+          #
+          body = @body.javascript(:last)
+
+          #
+          # We only have to set the alternate self variable if it was
+          # used somewhere (within an iterator)
+          #
+          if alternate_self_variable.used?
+            body = encode(alternate_self_variable) + "=" + encode_self() + ";" + body 
+          end
+
+        end
+      end
+
+      "function(#{args}){\n" + variable_declaration() + (opt ? opt + ";" : "") + body + "}"
     end
 
     def variable_declaration
-      arr = (@scope.nearest_local_scope.variables.values - @arguments.variables).map {|var|
-        encode(var)
-      } 
-      arr += (@scope.nearest_local_scope.temporary_variables.values).map {|var|
-        encode(var)
-      }
+      arr = (@scope.nearest_local_scope.variables.values - @arguments.variables).
+        select {|var| var.used? }.map {|var| encode(var) } 
+      arr += (@scope.nearest_local_scope.temporary_variables.values).
+        select {|var| var.used? }.map {|var| encode(var) }
 
       if arr.empty?
         ""

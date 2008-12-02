@@ -88,6 +88,11 @@ module RubyJS; class Compiler
       var.encode(self.encoder)
     end
 
+    def encode_self
+      get(:self).track_read
+      encode(get(:self))
+    end
+
   end # class Node
 
 end; end # class Compiler; module RubyJS

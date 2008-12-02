@@ -24,4 +24,14 @@ module RubyJS; class Compiler
     end
   end
 
+  class SelfVariable < Variable
+    def initialize
+      super("this")
+    end
+
+    def encode(encoder)
+      "this"
+    end
+  end
+
 end; end # class Compiler; module RubyJS
