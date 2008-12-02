@@ -15,6 +15,7 @@ module RubyJS
 end
 
 require 'rubyjs/compiler/compiler'
+require 'rubyjs/compiler/variable'
 require 'rubyjs/compiler/scope'
 require 'rubyjs/compiler/rewrites'
 require 'rubyjs/compiler/nodes/all'

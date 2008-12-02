@@ -1,6 +1,18 @@
 module RubyJS; class Compiler; class Node
 
   #
+  # Local variable lookup
+  #
+  class LVar < Node
+    kind :lvar
+
+    def args(name)
+      @variable = @scope.nearest_local_scope.find_variable(name) || raise("Undefined variable #{name}")
+      @variable.track_read
+    end
+  end
+
+  #
   # Local variable assignment
   #
   class LAsgn < Node
@@ -14,25 +26,14 @@ module RubyJS; class Compiler; class Node
   end
 
   #
-  # Local variable lookup
-  #
-  class LVar < Node
-    kind :lvar
-
-    def args(name)
-      @variable = @scope.nearest_local_scope.find_variable(name) || raise("Undefined variable #{name}")
-      @variable.track_read
-    end
-  end
-
-  #
   # Global variable lookup
   #
   class GVar < Node
     kind :gvar
 
     def args(name)
-      @name = name
+      @variable = GlobalVariable.new(name)
+      @variable.track_read
     end
   end
 
@@ -43,7 +44,9 @@ module RubyJS; class Compiler; class Node
     kind :gasgn
 
     def args(name, expr=nil)
-      @name, @expr = name, expr
+      @variable = GlobalVariable.new(name)
+      @variable.track_write
+      @expr = expr
     end
   end
 
@@ -54,7 +57,8 @@ module RubyJS; class Compiler; class Node
     kind :ivar
 
     def args(name)
-      @name = name.to_s
+      @variable = InstanceVariable.new(name)
+      @variable.track_read
     end
   end
 
@@ -65,7 +69,9 @@ module RubyJS; class Compiler; class Node
     kind :iasgn
 
     def args(name, expr=nil)
-      @name, @expr = name.to_s, expr
+      @variable = InstanceVariable.new(name)
+      @variable.track_write
+      @expr = expr
     end
   end
   
