@@ -4,7 +4,7 @@ module RubyJS; class Compiler; class Node
 
     class ArgumentList
       def as_javascript
-        raise if get(:mode) != :expression
+        raise unless get(:mode) == :expression
         @elements.map {|e| e.javascript }.join(", ")
       end
 
@@ -12,9 +12,8 @@ module RubyJS; class Compiler; class Node
     end
 
     class BlockPass
-      # TODO
       def as_javascript
-        'TODO'
+        @block.javascript
       end
     end
 

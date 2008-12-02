@@ -104,13 +104,23 @@ module RubyJS; class Compiler; class Node
       end
     end
 
-    attr_accessor :iter
+    attr_accessor :arguments
 
     #
     # The arguments used in a method call.
     #
-    class ArgumentList < ArrayLiteral
+    class ArgumentList < Node
       kind :arglist
+
+      def args(*elements)
+        @elements = elements
+      end
+
+      def <<(arg)
+        @elements << arg
+      end
+
+      attr_reader :elements
     end
 
     #

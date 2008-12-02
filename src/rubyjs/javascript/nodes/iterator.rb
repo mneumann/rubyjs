@@ -44,19 +44,12 @@ module RubyJS; class Compiler; class Node
     end
   end
 
-  #
-  # TODO
-  #
   class Iter
     def as_javascript
-      "function() {\n" +
+      "function() {" +
       @body.javascript(:last) +
-      "};" #+ 
-      # FIXME
-      #@method_call.javascript(as_expression)
+      "}"
     end
-
-    def brackets?; true end
   end
 
 end; end; end # class Node; class Compiler; module RubyJS

@@ -47,24 +47,22 @@ module RubyJS; class Compiler; class Node
   class Iter < Node
     kind :iter
 
-    def initialize(compiler)
-      super(compiler)
-      @scope = LocalScope.new(self, IteratorScope.new(self, @scope))
-    end
-
     def consume(sexp)
       method_call, *rest = *sexp
 
       res = super([method_call]) 
       raise if res.size != 1
-      res.first.iter = self 
+      # append Iter to ArgumentList
+      res.first.arguments << self
 
+      @scope = LocalScope.new(self, IteratorScope.new(self, @scope))
       set(:scope => @scope) { res.push(*super(rest)) }
       return res
     end
 
-    def args(method_call, block_assignment, body=nil)
+    def normalize(method_call, block_assignment, body=nil)
       @method_call, @block_assignment, @body = method_call, block_assignment, expand_nil(body)
+      return @method_call
     end
   end
 
