@@ -33,7 +33,7 @@ module RubyJS; class Compiler; class Node
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
         fmt % [
           @receiver.javascript(:expression),
-          self.encoder.encode_method(@method_name),
+          encoder.encode_method(@method_name),
           @arguments.javascript(:expression)
         ]
       end
@@ -41,7 +41,7 @@ module RubyJS; class Compiler; class Node
 
     def plugin_attr(arg)
       raise ArgumentError unless arg.is?(SymbolLiteral)
-      self.encoder.encode_attr(arg.value.to_s)
+      encoder.encode_attr(arg.value.to_s)
     end
 
     def plugin_inline(arg)
@@ -51,12 +51,12 @@ module RubyJS; class Compiler; class Node
 
     def plugin_runtime(arg)
       raise ArgumentError unless arg.is?(SymbolLiteral)
-      self.encoder.encode_runtime(arg.value.to_s)
+      encoder.encode_runtime(arg.value.to_s)
     end
 
     def plugin_method(arg)
       raise ArgumentError unless arg.is?(SymbolLiteral)
-      self.encoder.encode_method(arg.value.to_s)
+      encoder.encode_method(arg.value.to_s)
     end
 
     #
@@ -66,9 +66,9 @@ module RubyJS; class Compiler; class Node
     #
     def plugin_conv2ruby(arg)
       @scope.nearest_local_scope.with_temporary_variable {|temp_var|
-        tmp = temp_var.encode(self.encoder)
+        tmp = encode(temp_var)
         js = arg.javascript(:expression)
-        "(#{tmp}=(#{js}),#{tmp}==null ? #{self.encoder.encode_nil} : #{tmp})" 
+        "(#{tmp}=(#{js}),#{tmp}==null ? #{encoder.encode_nil} : #{tmp})" 
       }
     end
   end
@@ -103,10 +103,10 @@ module RubyJS; class Compiler; class Node
 
     def variable_declaration
       arr = (@scope.nearest_local_scope.variables.values - @arguments.variables).map {|var|
-        var.encode(self.encoder)
+        encode(var)
       } 
       arr += (@scope.nearest_local_scope.temporary_variables.values).map {|var|
-        var.encode(self.encoder)
+        encode(var)
       }
 
       if arr.empty?
@@ -121,9 +121,9 @@ module RubyJS; class Compiler; class Node
 
   class MethodArguments
     def javascript_arglist
-      args = @arguments.map {|var| var.encode(self.encoder) }
+      args = @arguments.map {|var| encode(var) }
       if @block and not @catch_all
-        args += ["_", @block.encode(self.encoder)]
+        args += ["_", encode(@block)]
       end
       args.join(", ")
     end

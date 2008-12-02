@@ -2,13 +2,13 @@ module RubyJS; class Compiler; class Node
 
   class LVar
     def as_javascript
-      @variable.encode(self.encoder)
+      encode(@variable)
     end
   end
 
   class LAsgn
     def as_javascript
-      @variable.encode(self.encoder) + " = " + @expr.javascript(:expression)
+      encode(@variable) + " = " + @expr.javascript(:expression)
     end
 
     def brackets?; true end
@@ -18,7 +18,7 @@ module RubyJS; class Compiler; class Node
     def as_javascript
       get(:method_scope).add_ivar_lookup(@variable.name)
       # TODO: use "self" in iterator
-      "this." + @variable.encode(self.encoder)
+      "this." + encode(@variable)
     end
   end
 
@@ -26,7 +26,7 @@ module RubyJS; class Compiler; class Node
     def as_javascript
       get(:method_scope).add_ivar_assignment(@variable.name)
       # TODO: use "self" in iterator
-      "this." + @variable.encode(self.encoder) + " = " + @expr.javascript(:expression)
+      "this." + encode(@variable) + " = " + @expr.javascript(:expression)
     end
 
     def brackets?; true end
