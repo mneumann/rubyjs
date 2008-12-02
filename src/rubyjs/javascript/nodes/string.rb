@@ -16,7 +16,7 @@ module RubyJS; class Compiler; class Node
         map {|piece| 
           str = piece.javascript(:expression)
           if piece.is?(EvalString)
-            (piece.brackets? ? "(%s).%s()" : "%s.%s()") % [str, get(:encoder).encode_method("to_s")]
+            (piece.brackets? ? "(%s).%s()" : "%s.%s()") % [str, self.encoder.encode_method("to_s")]
           else
             str
           end
