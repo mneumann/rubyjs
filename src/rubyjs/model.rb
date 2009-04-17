@@ -124,7 +124,7 @@ module RubyJS
     def <=>(other)
       return -1 if prefix_of(self.name_pieces, other.name_pieces)
       return 1 if prefix_of(other.name_pieces, self.name_pieces)
-      return 0
+      return self.name <=> other.name
     end
 
     protected
