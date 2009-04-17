@@ -1,7 +1,7 @@
 # 
-# Evals into the given module_scope.
+# Evals a script into the given module_scope.
 #
-# Copyright (c) 2007, 2008 by Michael Neumann (mneumann@ntecs.de).
+# Copyright (c) 2007-2009 by Michael Neumann (mneumann@ntecs.de).
 #
 
 module RubyJS

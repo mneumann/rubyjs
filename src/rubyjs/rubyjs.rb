@@ -28,4 +28,5 @@ require 'rubyjs/javascript/runtime'
 require 'rubyjs/javascript/code_generator'
 
 require 'rubyjs/model'
+require 'rubyjs/method_model'
 require 'rubyjs/eval_into'

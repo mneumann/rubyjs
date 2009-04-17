@@ -1,61 +1,122 @@
+#
+# Introspects the entities (classes, modules) of an application going to
+# be compiled to Javascript. 
+#
+# Copyright (c) 2007-2009 by Michael Neumann (mneumann@ntecs.de).
+#
+
 module RubyJS
 
-  require 'set'
-  require 'rubyjs/method_extractor'
+  #
+  # A WorldModel is a collection of all classes and modules defined
+  # within a RubyJS::Environment, i.e. all entities of an application
+  # that are going to be compiled to Javascript.
+  #
+  # Ruby classes and modules (which we call entities) are wrapped by
+  # subclasses of EntityModel (ClassModel, ModuleModel).
+  #
+  class WorldModel
 
-  class MethodModel
-    attr_reader :name, :sexp, :entity_model
-    attr_accessor :node # the associated Compiler::Node
-
-    def initialize(entity_model, name, sexp, is_class_method=false)
-      @entity_model = entity_model
-      @name, @sexp = name, sexp
-      @is_class_method = is_class_method
+    def initialize(namespace=::RubyJS::Environment)
+      @namespace = namespace
+      @entity_model_map = {}
     end
 
-    def class_method?
-      @is_class_method
+    def entity_models_sorted
+      @entity_model_map.values.sort {|a,b| a <=> b}
     end
-  end
+
+    def register_all_entities!
+      all_entities.each {|e| lookup(e) }
+    end
+
+    def register(entity, model)
+      raise if @entity_model_map.include?(entity)
+      @entity_model_map[entity] = model
+    end
+
+    def lookup(entity)
+      @entity_model_map[entity] || EntityModel.for(entity, self)
+    end
+
+    def root_object
+      namespace()::Object
+    end 
+
+    def namespace
+      @namespace
+    end 
+
+    def namespace_scope_r
+      /^#{namespace()}::(.*)$/
+    end
+
+    protected
+
+    def all_entities
+      seen = Hash.new
+      new_entities = [namespace()]
+
+      while entity = new_entities.shift
+        next if seen.include?(entity)
+        seen[entity] = true
+        each_entity(entity) {|e| new_entities << e}
+      end
+
+      seen.delete(namespace())
+      return seen.keys
+    end
+
+    def each_entity(under)
+      under.constants.each {|const|
+        value = under.const_get(const)
+        yield value if value.kind_of?(::Module)
+      }
+    end
+
+  end # class WorldModel
+
 
   #
-  # Class EntityModel is an abstract class that 
-  # represents either a Ruby class or a module.
+  # Abstract base class for representations of Ruby classes or modules.
+  #
+  # The +world+ is a reference to a WorldModel which contains all
+  # entities of the application that is going to be compiled.
   #
   class EntityModel
 
     attr_reader :world
-    attr_reader :of, :name, :name_pieces, :modules
-    attr_reader :imethods, :cmethods
+    attr_reader :entity
+    attr_reader :name, :name_pieces
     
-    def self.of(entity, world=WorldModel.new)
+    def self.for(entity, world=WorldModel.new)
       if entity.is_a?(::Class)
         ClassModel.new(entity, world)
       elsif entity.is_a?(::Module)
         ModuleModel.new(entity, world)
+      elsif entity.nil?
+        nil
       else
-        return nil if entity.nil?
         raise ArgumentError
       end
     end
 
     def initialize(entity, world)
       raise ArgumentError unless entity.is_a?(::Class) or entity.is_a?(::Module)
-      @of = entity
+      @entity = entity
       @world = world
       @world.register(entity, self)
       @name = namify(entity) 
       @name_pieces = @name.split("::")
+      @methods = MethodModel.all_for(entity) 
+    end
 
-      @imethods = {}
-      @cmethods = {}
-      methods = MethodExtractor.extract(entity)
-      methods[:instance].each {|k, v|
-        @imethods[k] = MethodModel.new(self, k, v)
-      }
-      methods[:class].each {|k, v|
-        @cmethods[k] = MethodModel.new(self, k, v, true)
-      }
+    def imethods
+      @methods.select {|m| m.instance_method?}
+    end
+
+    def cmethods
+      @methods.select {|m| m.class_method?}
     end
 
     include Comparable
@@ -93,60 +154,14 @@ module RubyJS
 
   end # class EntityModel
 
-  #
-  # Class ClassModel represents a Ruby class.
-  #
-  class ClassModel < EntityModel
-    attr_reader :sclass, :sclasses
-
-    def initialize(entity, world)
-      raise ArgumentError unless entity.is_a?(::Class)
-      super(entity, world)
-
-      #
-      # determine modules and superclass
-      #
-
-      a = entity.ancestors
-      raise unless a.first == entity
-      a = a[1...(a.index(::Object))]
-
-      #
-      # "correct" the ancestor chain
-      #
-      a << @world.root_object if entity != @world.root_object
-
-      #
-      # determine superclasses
-      #
-      @sclasses = a.select {|e| e.is_a?(::Class)}.map {|e| @world.lookup(e) }
-      @sclass = @sclasses.first
-
-      #
-      # Determine included modules
-      #
-      @modules = (@sclass ? a[0...(a.index(@sclass.of))] : a).map {|e| @world.lookup(e) }
-    end
-
-    def <=>(other)
-      # modules go before classes
-      return 1 if other.is_a?(ModuleModel)
-
-      # other is a superclass of self
-      return 1 if self.sclasses.include?(other)
-
-      # self is a superclass of other
-      return -1 if other.sclasses.include?(self)
-
-      super(other)
-    end
-
-  end # ClassModel
 
   #
   # Class ModuleModel represents a Ruby module.
   #
   class ModuleModel < EntityModel
+
+    attr_reader :modules
+
     def initialize(entity, world)
       raise ArgumentError unless entity.is_a?(::Module)
       super(entity, world)
@@ -170,72 +185,60 @@ module RubyJS
       super(other)
     end
 
-  end # ModuleModel
+  end # class ModuleModel
+
 
   #
-  # Class WorldModel represents ... 
+  # A ClassModel represents a Ruby class.
   #
-  class WorldModel
+  class ClassModel < EntityModel
 
-    def initialize(namespace=::RubyJS::Environment)
-      @namespace = namespace
-      @entity_model_map = {}
+    attr_reader :modules
+    attr_reader :sclass, :sclasses
+
+    def initialize(entity, world)
+      raise ArgumentError unless entity.is_a?(::Class)
+      super(entity, world)
+
+      #
+      # determine modules and superclass
+      #
+
+      a = entity.ancestors
+      raise unless a.shift == entity
+      a = a[0...(a.index(::Object))]
+
+      #
+      # "correct" the ancestor chain by inserting
+      # RubyJS's root object (like Ruby's Object class).
+      #
+      a << @world.root_object if entity != @world.root_object
+
+      #
+      # determine superclasses
+      #
+      @sclasses = a.select {|e| e.is_a?(::Class)}.map {|e| @world.lookup(e) }
+      @sclass = @sclasses.first
+
+      #
+      # Determine included modules
+      #
+      @modules = (@sclass ? a[0...(a.index(@sclass.entity))] : a).map {|e| @world.lookup(e) }
     end
 
-    def entity_models_sorted
-      @entity_model_map.values.sort {|a,b| a <=> b}
+    def <=>(other)
+      # modules go before classes
+      return 1 if other.is_a?(ModuleModel)
+
+      # other is a superclass of self
+      return 1 if self.sclasses.include?(other)
+
+      # self is a superclass of other
+      return -1 if other.sclasses.include?(self)
+
+      super(other)
     end
 
-    def register_all_entities!
-      all_entities.each {|e| lookup(e) }
-    end
-
-    def register(entity, model)
-      raise if @entity_model_map.include?(entity)
-      @entity_model_map[entity] = model
-    end
-
-    def lookup(entity)
-      @entity_model_map[entity] || EntityModel.of(entity, self)
-    end
-
-    protected
-
-    def all_entities
-      seen = Set.new
-      new_entities = [namespace()]
-
-      while entity = new_entities.shift
-        next if seen.include?(entity)
-        seen.add(entity)
-        each_entity(entity) {|e| new_entities << e}
-      end
-
-      seen.delete(namespace())
-      seen.to_a
-    end
-
-    def each_entity(under)
-      under.constants.each {|const|
-        value = under.const_get(const)
-        yield value if value.kind_of?(::Module)
-      }
-    end
-
-    public
-
-    def root_object
-      namespace()::Object
-    end 
-
-    def namespace
-      @namespace
-    end 
-
-    def namespace_scope_r
-      /^#{namespace()}::(.*)$/
-    end
-
-  end # WorldModel
+  end # class ClassModel
 
 end # module RubyJS
