@@ -17,7 +17,7 @@ module RubyJS
   #
   class WorldModel
 
-    def initialize(namespace=::RubyJS::Environment)
+    def initialize(namespace)
       @namespace = namespace
       @entity_model_map = {}
     end

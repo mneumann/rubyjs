@@ -101,7 +101,7 @@ module RubyJS
     end
 
     def generate_world(out="")
-      world = RubyJS::WorldModel.new
+      world = RubyJS::WorldModel.new(::RubyJS::Environment)
       world.register_all_entities!
 
       #
