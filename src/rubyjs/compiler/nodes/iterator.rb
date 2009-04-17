@@ -4,7 +4,7 @@ module RubyJS; class Compiler; class Node
   
   class Loop < Node
     def consume(sexp)
-      set(:scope => IteratorScope.new(self, @scope)) do
+      set(:control_scope => LoopControlScope.new(self)) do
         super(sexp)
       end
     end
@@ -22,17 +22,20 @@ module RubyJS; class Compiler; class Node
     kind :until
   end
 
-  class IteratorControl < Node
+  class LoopOrIteratorControl < Node
+    attr_reader :control_scope
+
     def args(argument=nil)
+      @control_scope = get(:control_scope)
       @argument = argument
     end
   end
 
-  class Break < IteratorControl
+  class Break < LoopOrIteratorControl
     kind :break
   end
 
-  class Next < IteratorControl 
+  class Next < LoopOrIteratorControl 
     kind :next
   end
 
@@ -55,8 +58,10 @@ module RubyJS; class Compiler; class Node
       # append Iter to ArgumentList
       res.first.arguments << self
 
-      @scope = LocalScope.new(self, IteratorScope.new(self, @scope))
-      set(:scope => @scope) { res.push(*super(rest)) }
+      @local_scope = LocalScope.new(self, @local_scope)
+      control_scope = IteratorControlScope.new(self)
+      set(:control_scope => control_scope, :local_scope => @local_scope) { res.push(*super(rest)) }
+
       return res
     end
 

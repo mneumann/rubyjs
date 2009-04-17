@@ -1,24 +1,29 @@
 module RubyJS; class Compiler
 
-  #
-  # There are two different kinds of scopes:
-  #
-  #   1. Those that introduce a new local variable scope
-  #
-  #   2. Those that introduce an iterator scope 
-  #
-  class Scope
+  require 'set'
 
-    require 'set'
-
-    attr_reader :node           # The AST node which introduced this Scope
+  class LocalScope
+    attr_reader :variables
+    attr_reader :temporary_variables
     attr_reader :parent_scope
+    attr_reader :node           # The AST node which introduced this Scope
 
     def initialize(node, parent_scope=nil)
       @node = node
       @parent_scope = parent_scope 
       @child_scopes = Set.new
       @parent_scope.register_child_scope(self) if @parent_scope
+
+      @variables = Hash.new
+
+      #
+      # Each local scope maintains its own pool of temporary variables.
+      # That implies that temporary variables can't be used across
+      # scope-boundaries! 
+      #
+      @temporary_variable_pool = []
+      @temporary_variable_cnt = 0
+      @temporary_variables = Hash.new 
     end
 
     def register_child_scope(scope)
@@ -37,40 +42,6 @@ module RubyJS; class Compiler
         current = current.parent_scope
       end
       scopes
-    end
-
-    #
-    # Returns the nearest local scope
-    #
-    def nearest_local_scope
-      all_scopes_to_root.find {|scope| scope.kind_of?(LocalScope)}
-    end
-
-    #
-    # Returns the nearest iterator scope
-    #
-    def nearest_iterator_scope
-      all_scopes_to_root.find {|scope| scope.kind_of?(IteratorScope)}
-    end
-
-  end
-
-  class LocalScope < Scope
-    attr_reader :variables, :temporary_variables
-
-    def initialize(node, parent_scope=nil)
-      super(node, parent_scope)
-
-      @variables = Hash.new
-
-      #
-      # Each local scope maintains its own pool of temporary variables.
-      # That implies that temporary variables can't be used across
-      # scope-boundaries! 
-      #
-      @temporary_variable_pool = []
-      @temporary_variable_cnt = 0
-      @temporary_variables = Hash.new 
     end
 
     #
@@ -113,7 +84,7 @@ module RubyJS; class Compiler
 
     def find_variable(name, declare_if_not_found=false)
       name = name.to_s
-      var = @variables[name] || (@parent_scope ? @parent_scope.nearest_local_scope.find_variable(name) : nil)
+      var = @variables[name] || (@parent_scope ? @parent_scope.find_variable(name) : nil)
       if declare_if_not_found and var.nil?
         declare_variable(name)
       else
@@ -124,7 +95,6 @@ module RubyJS; class Compiler
     def all_variables_recursive(&block)
       @variables.each_value(&block)
       @child_scopes.each {|cs|
-        next unless cs.kind_of?(LocalScope)
         cs.all_variables_recursive(&block)
       }
     end
@@ -139,9 +109,52 @@ module RubyJS; class Compiler
       @variables[name] = var
       return var
     end
-  end # LocalScope
+  end # class LocalScope
 
-  class IteratorScope < Scope
-  end
+  #
+  # Method scope used to write down called method and accessed
+  # instance methods.
+  #
+  class MethodScope
+    attr_reader :ivar_assignments, :ivar_lookups
+    attr_reader :method_calls
+
+    def initialize
+      @ivar_assignments = Set.new
+      @ivar_lookups = Set.new
+      @method_calls = Set.new
+      @super_call = false
+    end
+
+    def add_super_call
+      @super_call = true
+    end
+
+    def add_method_call(m)
+      @method_calls.add(m)
+    end
+
+    def add_ivar_lookup(ivar)
+      @ivar_lookups.add(ivar)
+    end
+
+    def add_ivar_assignment(ivar)
+      @ivar_assignments.add(ivar)
+    end
+  end # class MethodScope
+
+
+  class LoopControlScope
+    def initialize(node)
+      @node = node
+    end
+  end # class LoopControlScope
+
+
+  class IteratorControlScope
+    def initialize(node)
+      @node = node
+    end
+  end # class IteratorControlScope
 
 end; end # class Compiler; module RubyJS

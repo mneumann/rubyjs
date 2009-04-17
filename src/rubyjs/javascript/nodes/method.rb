@@ -29,7 +29,7 @@ module RubyJS; class Compiler; class Node
           raise "plugin #{@method_name} not found"
         end
       else
-        get(:method_scope).add_method_call(@method_name)
+        @compiler.method_scope.add_method_call(@method_name)
         fmt = @receiver.brackets? ? "(%s).%s(%s)" : "%s.%s(%s)"
         fmt % [
           @receiver.javascript(:expression),
@@ -65,7 +65,7 @@ module RubyJS; class Compiler; class Node
     # over and over again.
     #
     def plugin_conv2ruby(arg)
-      @scope.nearest_local_scope.with_temporary_variable {|temp_var|
+      @local_scope.with_temporary_variable {|temp_var|
         tmp = encode(temp_var)
         js = arg.javascript(:expression)
         "(#{tmp}=(#{js}),#{tmp}==null ? #{encoder.encode_nil} : #{tmp})" 
@@ -89,7 +89,7 @@ module RubyJS; class Compiler; class Node
       args, opt, body = nil, nil, nil
 
       self_variable = SelfVariable.new
-      @scope.nearest_local_scope.with_temporary_variable do |alternate_self_variable|
+      @local_scope.with_temporary_variable do |alternate_self_variable|
         set(:self => self_variable, :alternate_self => alternate_self_variable) do
           args = @arguments.javascript_arglist
           opt = @arguments.javascript_optional
@@ -116,9 +116,9 @@ module RubyJS; class Compiler; class Node
     end
 
     def variable_declaration
-      arr = (@scope.nearest_local_scope.variables.values - @arguments.variables).
+      arr = (@local_scope.variables.values - @arguments.variables).
         select {|var| var.used? }.map {|var| encode(var) } 
-      arr += (@scope.nearest_local_scope.temporary_variables.values).
+      arr += (@local_scope.temporary_variables.values).
         select {|var| var.used? }.map {|var| encode(var) }
 
       if arr.empty?
@@ -154,21 +154,21 @@ module RubyJS; class Compiler; class Node
 
   class Super
     def as_javascript
-      get(:method_scope).add_super_call
+      @compiler.method_scope.add_super_call
       raise
     end
   end
 
   class ZSuper
     def as_javascript
-      get(:method_scope).add_super_call
+      @compiler.method_scope.add_super_call
       raise
     end
   end
 
   class AttrAssign
     def as_javascript
-      get(:method_scope).add_method_call(@method_name)
+      @compiler.method_scope.add_method_call(@method_name)
       raise
     end
   end

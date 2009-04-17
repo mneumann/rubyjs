@@ -16,14 +16,14 @@ module RubyJS; class Compiler; class Node
 
   class IVar
     def as_javascript
-      get(:method_scope).add_ivar_lookup(@variable.name)
+      @compiler.method_scope.add_ivar_lookup(@variable.name)
       encode_self() + "." + encode(@variable)
     end
   end
 
   class IAsgn
     def as_javascript
-      get(:method_scope).add_ivar_assignment(@variable.name)
+      @compiler.method_scope.add_ivar_assignment(@variable.name)
       encode_self() + "." + encode(@variable) + " = " + @expr.javascript(:expression)
     end
 

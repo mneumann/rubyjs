@@ -7,11 +7,13 @@ module RubyJS; class Compiler
     Mapping = {}
 
     #
-    # Each Node has an associated scope which is by default the current
-    # dynamic variable of compiler.get(:scope) at the time of the
-    # creation of the node.
+    # Many Nodes require access to the local_scope in which they are
+    # created. As this information is passed in the dynamic variable of
+    # compiler.get(:local_scope) and is only available during the Node
+    # construction phase, we need to store it in an instance variable.
     #
-    attr_accessor :scope
+    attr_accessor :local_scope
+
 
     #
     # Registers a sexp type, or returns the registered sexp type.
@@ -65,7 +67,7 @@ module RubyJS; class Compiler
 
     def initialize(compiler)
       @compiler = compiler
-      @scope = compiler.get(:scope)
+      @local_scope = get(:local_scope)
     end
 
     #

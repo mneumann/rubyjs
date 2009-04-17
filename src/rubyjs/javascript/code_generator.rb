@@ -16,11 +16,9 @@ module RubyJS
 
     def generate_method(meth, out="")
       @encoder.reset_local_cache!
-      h = {
-        :encoder => @encoder,
-        :method_scope => RubyJS::Compiler::MethodScope.new 
-      }
-      meth.node.set(h) { out << meth.node.javascript }
+      meth.node.compiler.encoder = @encoder
+      out << meth.node.javascript
+      meth.node.compiler.encoder = nil
       return out
     end
 
@@ -31,8 +29,8 @@ module RubyJS
       runtime.imethods.sort_by{|m| m.name}.each do |meth|
         @vars << @encoder.encode_runtime(meth.name)
 
-        # compile method
-        meth.node = RubyJS::Compiler.new.sexp_to_node(meth.sexp)
+        # convert method's sexp into AST nodes
+        convert_method!(meth)
 
         # produce output
         out << @encoder.encode_runtime(meth.name) + " = " + generate_method(meth) + ";\n"
@@ -109,7 +107,8 @@ module RubyJS
       #
       world.entity_models_sorted.each do |model|
         (model.cmethods + model.imethods).each { |meth|
-          meth.node = RubyJS::Compiler.new.sexp_to_node(meth.sexp)
+          # convert method's sexp into AST nodes
+          convert_method!(meth)
         }
       end 
 
@@ -117,6 +116,13 @@ module RubyJS
         out << generate_model(world, model)
       }
       return out
+    end
+
+    def convert_method!(meth)
+      # convert method's sexp into AST nodes
+      compiler = RubyJS::Compiler.new
+      compiler.method_scope = RubyJS::Compiler::MethodScope.new
+      meth.node = compiler.sexp_to_node(meth.sexp)
     end
 
     def generate(js_namespace="RubyJS", out="")

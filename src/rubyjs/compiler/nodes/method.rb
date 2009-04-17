@@ -15,11 +15,11 @@ module RubyJS; class Compiler; class Node
 
     def initialize(compiler)
       super(compiler)
-      @scope = LocalScope.new(self)
+      @local_scope = LocalScope.new(self)
     end
 
     def consume(sexp)
-      set(:scope => @scope) do
+      set(:local_scope => @local_scope) do
         super(sexp)
       end
     end
@@ -52,12 +52,12 @@ module RubyJS; class Compiler; class Node
         case arg[0,1]
         when '*'
           raise if @catch_all
-          @catch_all = @scope.nearest_local_scope.find_variable(arg[1..-1], true)
+          @catch_all = @local_scope.find_variable(arg[1..-1], true)
         when '&'
           raise if @block
-          @block = @scope.nearest_local_scope.find_variable(arg[1..-1], true)
+          @block = @local_scope.find_variable(arg[1..-1], true)
         else
-          @arguments << @scope.nearest_local_scope.find_variable(arg, true)
+          @arguments << @local_scope.find_variable(arg, true)
         end
       }
     end
